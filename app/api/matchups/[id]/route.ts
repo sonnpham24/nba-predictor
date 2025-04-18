@@ -3,13 +3,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// ✅ Đây là cấu trúc đúng Next.js yêu cầu
-export async function GET(
-  _req: NextRequest,
-  context: { params: { id: string } }
-) {
-  const id = context.params.id;
-  const matchupId = parseInt(id);
+type Context = {
+  params: {
+    id: string;
+  };
+};
+
+export async function GET(_req: NextRequest, context: Context) {
+  const matchupId = parseInt(context.params.id);
 
   if (isNaN(matchupId)) {
     return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
@@ -21,7 +22,9 @@ export async function GET(
       include: {
         predictions: {
           include: {
-            user: { select: { username: true } },
+            user: {
+              select: { username: true },
+            },
           },
         },
       },
@@ -37,3 +40,4 @@ export async function GET(
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
+
