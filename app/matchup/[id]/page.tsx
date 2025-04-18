@@ -59,7 +59,7 @@ export default function MatchupDetailsPage() {
 
     const fetchMatchup = async () => {
       try {
-        const res = await fetch(`/api/matchup/${id}`);
+        const res = await fetch(`/api/matchups/${id}`);
         if (!res.ok) {
           setError('Không thể tải dữ liệu từ server.');
           return;
