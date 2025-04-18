@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+// app/api/matchups/[id]/route.ts
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-
-// 👇 ĐÂY là kiểu type đúng do Next.js cung cấp
-import type { NextApiRequest } from 'next';
 
 const prisma = new PrismaClient();
 
+// 👇 CHỈ cần 1 argument context chứa params
 export async function GET(
-  req: NextRequest,
+  _req: Request,
   context: { params: { id: string } }
 ) {
   try {
