@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Record<string, string> }
 ) {
-  const idStr = context.params.id;
+  const idStr = params.id;
   const matchupId = parseInt(idStr);
 
   if (isNaN(matchupId)) {
