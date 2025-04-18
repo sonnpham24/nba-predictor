@@ -3,20 +3,17 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-type Context = {
-  params: {
-    id: string;
-  };
-};
-
-export async function GET(_req: NextRequest, context: Context) {
-  const matchupId = parseInt(context.params.id);
-
-  if (isNaN(matchupId)) {
-    return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
-  }
-
+export async function GET(req: NextRequest) {
   try {
+    // ✅ Lấy ID từ URL thủ công
+    const url = new URL(req.url);
+    const idStr = url.pathname.split('/').pop(); // "/api/matchups/1" → "1"
+
+    const matchupId = parseInt(idStr || '');
+    if (isNaN(matchupId)) {
+      return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
+    }
+
     const matchup = await prisma.matchup.findUnique({
       where: { id: matchupId },
       include: {
@@ -40,4 +37,5 @@ export async function GET(_req: NextRequest, context: Context) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
+
 
