@@ -1,22 +1,23 @@
 // app/api/matchups/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-// ✅ Đúng định dạng cho App Router API routes (với params)
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
+    const { id } = context.params;
+    const matchupId = parseInt(id);
+
+    if (isNaN(matchupId)) {
       return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
     }
 
     const matchup = await prisma.matchup.findUnique({
-      where: { id },
+      where: { id: matchupId },
       include: {
         predictions: {
           include: {
@@ -33,8 +34,8 @@ export async function GET(
     }
 
     return NextResponse.json(matchup);
-  } catch (error) {
-    console.error('❌ Lỗi khi lấy matchup:', error);
+  } catch (err) {
+    console.error('❌ Lỗi server:', err);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
