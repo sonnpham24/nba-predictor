@@ -3,18 +3,18 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// ✅ Kiểu chính xác cần dùng: context: { params: { id: string } }
-export async function GET(
-  req: NextRequest,
-  context: { params: { id: string } }
-) {
-  const matchupId = parseInt(context.params.id);
-
-  if (isNaN(matchupId)) {
-    return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
-  }
-
+export async function GET(req: NextRequest) {
   try {
+    // ✅ Trích xuất ID từ URL
+    const url = new URL(req.url);
+    const idStr = url.pathname.split('/').pop(); // lấy phần cuối của URL
+
+    const matchupId = parseInt(idStr || '');
+
+    if (isNaN(matchupId)) {
+      return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
+    }
+
     const matchup = await prisma.matchup.findUnique({
       where: { id: matchupId },
       include: {
