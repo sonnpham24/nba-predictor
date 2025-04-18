@@ -3,11 +3,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// ✅ Kiểu tham số đúng cho App Router API Route
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const matchupId = parseInt(context.params.id);
+  const matchupId = parseInt(params.id);
 
   if (isNaN(matchupId)) {
     return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
@@ -19,7 +20,9 @@ export async function GET(
       include: {
         predictions: {
           include: {
-            user: { select: { username: true } },
+            user: {
+              select: { username: true },
+            },
           },
         },
       },
@@ -35,6 +38,7 @@ export async function GET(
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
+
 
 
 
