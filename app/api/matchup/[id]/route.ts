@@ -3,12 +3,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// ✅ Kiểu tham số đúng cho App Router API Route
+// ✅ Kiểu chính xác cần dùng: context: { params: { id: string } }
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const matchupId = parseInt(params.id);
+  const matchupId = parseInt(context.params.id);
 
   if (isNaN(matchupId)) {
     return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
@@ -38,6 +38,7 @@ export async function GET(
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
+
 
 
 
