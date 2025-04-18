@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏀 NBA Playoff Predictor 2025
 
-## Getting Started
+Dự án web giúp người chơi dự đoán kết quả các vòng đấu trong NBA Playoffs 2025.  
+Điểm số sẽ được tính dựa trên độ chính xác của dự đoán.
 
-First, run the development server:
+---
 
-```bash
+## 🚀 Tính năng nổi bật
+
+- Đăng ký / Đăng nhập tài khoản người dùng
+- Dự đoán đội thắng và tỷ số từng cặp đấu
+- Bảng xếp hạng điểm số theo người chơi
+- Thống kê toàn giải: độ chính xác, biểu đồ, trận nào nhiều người đoán đúng
+- Trang quản trị (Admin) để:
+  - Cập nhật kết quả thật từng trận
+  - Đặt deadline (lockTime) từng trận
+  - Tạo vòng đấu tiếp theo
+- Thông báo khi có kết quả mới (toasts)
+- Responsive cho mobile & desktop
+
+---
+
+## 💡 Cách tính điểm
+
+- ✅ Đúng đội & đúng tỷ số: `3 điểm`
+- ✅ Đúng đội, lệch đúng 1 trận: `2 điểm`
+- ✅ Đúng đội, lệch >1 trận: `1 điểm`
+- ❌ Sai đội: `0 điểm`
+
+---
+
+## 🛠️ Công nghệ sử dụng
+
+- **Next.js 14** (App Router)
+- **Tailwind CSS** + `shadcn/ui` cho UI
+- **Prisma + SQLite** (hoặc PostgreSQL) cho DB
+- **JWT** để xác thực người dùng
+- **Vercel** để deploy
+- `recharts` để hiển thị biểu đồ thống kê
+
+---
+
+## ⚙️ Cài đặt local
+git clone https://github.com/your-username/nba-predictor.git
+cd nba-predictor
+npm install
+npx prisma migrate dev --name init
+npx prisma db seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Tạo file .env với nội dung:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="your-secret"
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Tài khoản mặc định
 
-## Learn More
+Username: admin
+Password: admin123
 
-To learn more about Next.js, take a look at the following resources:
+- Deploy trên Vercel
+Import repo từ GitHub vào https://vercel.com
+Set biến môi trường:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+DATABASE_URL
+JWT_SECRET
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Click Deploy
 
-## Deploy on Vercel
+- Demo
+(Cập nhật sau khi deploy)
+nba-predictor.vercel.app
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Liên hệ
+Dev: Son Pham (phamcongson297@gmail.com)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Dự án cá nhân, phi thương mại
