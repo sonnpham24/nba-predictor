@@ -5,10 +5,9 @@ const prisma = new PrismaClient();
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Record<string, string> }
+  context: { params: { id: string } }
 ) {
-  const idStr = params.id;
-  const matchupId = parseInt(idStr);
+  const matchupId = parseInt(context.params.id);
 
   if (isNaN(matchupId)) {
     return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
@@ -20,9 +19,7 @@ export async function GET(
       include: {
         predictions: {
           include: {
-            user: {
-              select: { username: true },
-            },
+            user: { select: { username: true } },
           },
         },
       },
@@ -34,9 +31,10 @@ export async function GET(
 
     return NextResponse.json(matchup);
   } catch (err) {
-    console.error(err);
+    console.error('❌ Lỗi server:', err);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
+
 
 
