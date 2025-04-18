@@ -51,17 +51,33 @@ function getSummaryStats(predictions: any[], matchup: any) {
 
 export default function MatchupDetailsPage() {
   const { id } = useParams();
-  const [matchup, setMatchup] = useState<any>(null);
+  const [matchup, setMatchup] = useState<any | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) return;
+
     const fetchMatchup = async () => {
-      const res = await fetch(`/api/matchup/${id}`);
-      const data = await res.json();
-      setMatchup(data);
+      try {
+        const res = await fetch(`/api/matchup/${id}`);
+        if (!res.ok) {
+          setError('Không thể tải dữ liệu từ server.');
+          return;
+        }
+        const data = await res.json();
+        setMatchup(data);
+      } catch (err) {
+        console.error(err);
+        setError('Đã xảy ra lỗi khi tải dữ liệu.');
+      }
     };
 
     fetchMatchup();
   }, [id]);
+
+  if (error) {
+    return <p className="p-6 text-center text-red-500">❌ {error}</p>;
+  }
 
   if (!matchup) {
     return <p className="p-6 text-center">Đang tải...</p>;
