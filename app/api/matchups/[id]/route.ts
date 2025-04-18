@@ -3,13 +3,15 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET(
-  req: NextRequest,
-  context: { params: { id: string } }
-) {
+type Params = {
+  params: {
+    id: string;
+  };
+};
+
+export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const { id } = context.params;
-    const matchupId = parseInt(id);
+    const matchupId = parseInt(params.id);
 
     if (isNaN(matchupId)) {
       return NextResponse.json({ error: 'ID không hợp lệ' }, { status: 400 });
