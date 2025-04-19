@@ -26,6 +26,7 @@ export default function PredictPage() {
     'Timberwolves (6)': '/logos/timberwolves.png',
     'Rockets (2)': '/logos/rockets.png',
     'Warriors (7)': '/logos/warriors.png',
+    'Grizzlies (8)': '/logos/grizzlies.png',
   
     'Cavaliers (1)': '/logos/cavaliers.png',
     'Pacers (4)': '/logos/pacers.png',
@@ -34,6 +35,7 @@ export default function PredictPage() {
     'Pistons (6)': '/logos/pistons.png',
     'Celtics (2)': '/logos/celtics.png',
     'Magic (7)': '/logos/magic.png',
+    'Heat (8)': '/logos/heat.png',
   
     '?? (8)': '/logos/unknown.png',
   };
