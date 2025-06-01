@@ -119,6 +119,30 @@ export default function AdminPage() {
     <div className="p-6 min-h-screen bg-white text-black">
       <h1 className="text-3xl font-bold mb-6 text-center">🛠️ Trang Quản Trị</h1>
       <div className="space-y-10 max-w-5xl mx-auto">
+
+        {/* Thêm nút Tạo Vòng Chung Kết Tổng */}
+        <div className="mb-8 text-center">
+          <Button
+            className="bg-red-600 text-white hover:bg-red-700"
+            onClick={async () => {
+              const confirmGo = window.confirm('Bạn chắc chắn muốn tạo vòng Chung Kết Tổng?');
+              if (!confirmGo) return;
+
+              const res = await fetch('/api/admin/create-final', { method: 'POST' });
+              const data = await res.json();
+
+              if (res.ok) {
+                alert('✅ Đã tạo vòng Chung Kết Tổng!');
+                location.reload();
+              } else {
+                alert(`❌ Thất bại: ${data.error}`);
+              }
+            }}
+          >
+            🏆 Tạo vòng Chung Kết Tổng
+          </Button>
+        </div>
+
         {Object.entries(grouped).map(([key, matches]: any) => {
           const [round, conference] = key.split('-');
           return (
