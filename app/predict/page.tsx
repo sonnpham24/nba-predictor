@@ -233,16 +233,21 @@ export default function PredictPage() {
   // Lọc theo conference và round
   const groupedByRoundAndConference: {
     [round: number]: {
-      west: any[],
-      east: any[],
-    }
+      west: any[];
+      east: any[];
+      final: any[];
+    };
   } = {};
-  
+
   matchups.forEach((match) => {
     if (!groupedByRoundAndConference[match.round]) {
-      groupedByRoundAndConference[match.round] = { west: [], east: [] };
+      groupedByRoundAndConference[match.round] = { west: [], east: [], final: [] };
     }
-    groupedByRoundAndConference[match.round][match.conference as 'west' | 'east'].push(match);
+    if (match.conference === 'west' || match.conference === 'east') {
+      groupedByRoundAndConference[match.round][match.conference as 'west' | 'east'].push(match);
+    } else {
+      groupedByRoundAndConference[match.round].final.push(match);
+    }
   });
   
   const roundTitle = (round: number) => {
@@ -288,18 +293,30 @@ export default function PredictPage() {
             </h2>
   
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-center">🌅 Western Conference</h3>
-                <div className="space-y-4">
-                  {conferences.west.map((match: any) => renderMatchupCard(match))}
+              {conferences.west.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 text-center">🌅 Western Conference</h3>
+                  <div className="space-y-4">
+                    {conferences.west.map((match: any) => renderMatchupCard(match))}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-center">🌇 Eastern Conference</h3>
-                <div className="space-y-4">
-                  {conferences.east.map((match: any) => renderMatchupCard(match))}
+              )}
+              {conferences.east.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 text-center">🌇 Eastern Conference</h3>
+                  <div className="space-y-4">
+                    {conferences.east.map((match: any) => renderMatchupCard(match))}
+                  </div>
                 </div>
-              </div>
+              )}
+              {conferences.final && conferences.final.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 text-center">👑 Chung kết tổng</h3>
+                  <div className="space-y-4">
+                    {conferences.final.map((match: any) => renderMatchupCard(match))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
