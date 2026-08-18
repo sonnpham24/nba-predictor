@@ -1,18 +1,12 @@
-// app/api/auth/profile/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { getUserFromRequest } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get('token')?.value;
+  const user = await getUserFromRequest(req);
 
-  if (!token) {
+  if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    return NextResponse.json(decoded);
-  } catch (err) {
-    return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-  }
+  return NextResponse.json(user);
 }

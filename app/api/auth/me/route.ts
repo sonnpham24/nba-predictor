@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { jwtVerify } from 'jose';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
+import { getUserFromRequest } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
+  const payload = await getUserFromRequest(request);
 
-  if (!token) {
-    return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+  if (!payload) {
+    return NextResponse.json({ error: 'Chưa đăng nhập hoặc token không hợp lệ' }, { status: 401 });
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-
     const user = await prisma.user.findUnique({
-      where: { id: payload.id as number },
+      where: { id: payload.id },
       select: { id: true, username: true, isAdmin: true },
-    });    
+    });
 
     if (!user) {
       return NextResponse.json({ error: 'Người dùng không tồn tại' }, { status: 404 });
@@ -26,6 +21,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ user });
   } catch (error) {
-    return NextResponse.json({ error: 'Token không hợp lệ' }, { status: 403 });
+    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }

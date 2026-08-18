@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { requireAdminFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
-    requireAdminFromRequest(req);
+    await requireAdminFromRequest(req);
 
     const { round, conference } = await req.json();
 
@@ -51,4 +49,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message || 'Lỗi server' }, { status: 500 });
   }
 }
-

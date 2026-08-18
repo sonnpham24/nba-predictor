@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import { registerSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { username, password } = body;
-
-  // Kiểm tra đầu vào
-  if (!username || !password) {
-    return NextResponse.json({ error: 'Thiếu username hoặc password' }, { status: 400 });
-  }
-
   try {
+    const body = await request.json();
+    const validation = registerSchema.safeParse(body);
+
+    if (!validation.success) {
+      const errorMsg = validation.error.issues[0]?.message || 'Dữ liệu không hợp lệ';
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
+    }
+
+    const { username, password } = validation.data;
+
     // Kiểm tra username đã tồn tại chưa
     const existingUser = await prisma.user.findUnique({
       where: { username },
@@ -34,7 +35,10 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ message: 'Tạo tài khoản thành công', user: { id: newUser.id, username: newUser.username } });
+    return NextResponse.json({
+      message: 'Tạo tài khoản thành công',
+      user: { id: newUser.id, username: newUser.username },
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });

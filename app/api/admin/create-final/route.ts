@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { requireAdminFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
-    requireAdminFromRequest(req);
+    await requireAdminFromRequest(req);
 
     // 1️⃣ Lấy đội thắng vòng 3 của mỗi miền
     const westWinner = await prisma.matchup.findFirst({
@@ -32,7 +30,7 @@ export async function POST(req: NextRequest) {
         teamA: westWinner.actualWinner,
         teamB: eastWinner.actualWinner,
         round: 4,
-        conference: 'final', // hoặc null
+        conference: 'final',
       },
     });
 

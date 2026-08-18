@@ -1,19 +1,21 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
+import { createJwtToken } from '@/lib/auth';
+import { loginSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { username, password } = body;
-
-  if (!username || !password) {
-    return NextResponse.json({ error: 'Thiếu username hoặc password' }, { status: 400 });
-  }
-
   try {
+    const body = await request.json();
+    const validation = loginSchema.safeParse(body);
+
+    if (!validation.success) {
+      const errorMsg = validation.error.issues[0]?.message || 'Dữ liệu không hợp lệ';
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
+    }
+
+    const { username, password } = validation.data;
+
     // Tìm người dùng trong DB
     const user = await prisma.user.findUnique({ where: { username } });
 
@@ -28,33 +30,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Sai mật khẩu' }, { status: 401 });
     }
 
-    // Tạo JWT token
-    const token = jwt.sign(
-      {
-        id: user.id,
-        username: user.username,
-        isAdmin: user.isAdmin, // ✅ thêm dòng này
-      },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '7d' }
-    );    
+    // Tạo JWT token sử dụng jose
+    const token = await createJwtToken({
+      id: user.id,
+      username: user.username,
+      isAdmin: user.isAdmin,
+    });
 
-    // 👉 Tạo response
     const response = NextResponse.json({
       message: 'Đăng nhập thành công',
       user: {
         id: user.id,
         username: user.username,
-        isAdmin: user.isAdmin, // 👈 thêm dòng này
-      },      
+        isAdmin: user.isAdmin,
+      },
     });
 
-    // 👉 Gắn token vào cookie (HttpOnly)
     response.cookies.set('token', token, {
       httpOnly: true,
       path: '/',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 ngày
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return response;
@@ -63,4 +59,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
-

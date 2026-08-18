@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
-    // ✅ Lấy ID từ URL thủ công
     const url = new URL(req.url);
-    const idStr = url.pathname.split('/').pop(); // "/api/matchups/1" → "1"
+    const idStr = url.pathname.split('/').pop();
 
     const matchupId = parseInt(idStr || '');
     if (isNaN(matchupId)) {
@@ -37,5 +34,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
-
-

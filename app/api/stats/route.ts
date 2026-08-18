@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   const matchups = await prisma.matchup.findMany({
@@ -12,7 +10,7 @@ export async function GET() {
 
   const result = matchups.map((m) => {
     const total = m.predictions.length;
-    const correct = m.predictions.filter(p => p.predictedWinner === m.actualWinner).length;
+    const correct = m.predictions.filter((p) => p.predictedWinner === m.actualWinner).length;
     const accuracy = total === 0 ? 0 : Math.round((correct / total) * 100);
 
     return {

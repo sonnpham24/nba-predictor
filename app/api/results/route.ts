@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { requireAdminFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { resultSchema } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   try {
-    // ✅ Check quyền admin từ request
-    requireAdminFromRequest(req);
+    await requireAdminFromRequest(req);
 
-    const { matchupId, actualWinner, actualScore, lockTime } = await req.json();
+    const body = await req.json();
+    const validation = resultSchema.safeParse(body);
 
-    if (!matchupId || !actualWinner || !actualScore) {
-      return NextResponse.json({ error: 'Thiếu dữ liệu' }, { status: 400 });
+    if (!validation.success) {
+      const errorMsg = validation.error.issues[0]?.message || 'Dữ liệu không hợp lệ';
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
+
+    const { matchupId, actualWinner, actualScore } = validation.data;
+    const lockTime = body.lockTime;
 
     const updated = await prisma.matchup.update({
       where: { id: matchupId },

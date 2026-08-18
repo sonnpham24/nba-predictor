@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
+import { getUserFromRequest } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get('token')?.value;
-
-  if (!token) return NextResponse.json({ score: 0 });
-
-  const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-  const userId = decoded.id;
+  const user = await getUserFromRequest(req);
+  if (!user) return NextResponse.json({ score: 0 });
 
   const predictions = await prisma.prediction.findMany({
-    where: { userId },
+    where: { userId: user.id },
     include: { matchup: true },
   });
 

@@ -1,6 +1,7 @@
 'use client';
 
 export async function requireAdminClient(): Promise<void> {
+  if (typeof window === 'undefined') return;
   const res = await fetch('/api/auth/me', { cache: 'no-store' });
 
   if (!res.ok) {
@@ -13,5 +14,3 @@ export async function requireAdminClient(): Promise<void> {
     throw new Error('Bạn không có quyền admin');
   }
 }
-
-

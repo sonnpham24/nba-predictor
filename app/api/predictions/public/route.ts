@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   const predictions = await prisma.prediction.findMany({
     include: {
       user: {
-        select: { username: true }
+        select: { username: true },
       },
       matchup: {
         select: {
@@ -15,13 +13,13 @@ export async function GET() {
           teamA: true,
           teamB: true,
           actualWinner: true,
-          actualScore: true
-        }
-      }
+          actualScore: true,
+        },
+      },
     },
     orderBy: {
-      matchupId: 'asc'
-    }
+      matchupId: 'asc',
+    },
   });
 
   return NextResponse.json(predictions);

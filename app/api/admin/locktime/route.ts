@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { requireAdminFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { lockTimeSchema } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   try {
-    requireAdminFromRequest(req);
+    await requireAdminFromRequest(req);
 
-    const { matchupId, lockTime } = await req.json();
+    const body = await req.json();
+    const validation = lockTimeSchema.safeParse(body);
 
-    if (!matchupId || !lockTime) {
-      return NextResponse.json({ error: 'Thiếu dữ liệu' }, { status: 400 });
+    if (!validation.success) {
+      const errorMsg = validation.error.issues[0]?.message || 'Dữ liệu không hợp lệ';
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
+
+    const { matchupId, lockTime } = validation.data;
 
     const updated = await prisma.matchup.update({
       where: { id: matchupId },
@@ -25,4 +28,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message || 'Lỗi server' }, { status: 500 });
   }
 }
-
