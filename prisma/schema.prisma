@@ -18,6 +18,8 @@ model User {
   isAdmin            Boolean             @default(false)
   isEmailVerified    Boolean             @default(false)
   emailVerifyCode    String?
+  emailVerifyExpires DateTime?
+  createdAt          DateTime            @default(now())
   predictions        Prediction[]
   regularPredictions RegularPrediction[]
 }

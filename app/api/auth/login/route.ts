@@ -3,9 +3,13 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { createJwtToken } from '@/lib/auth';
 import { loginSchema } from '@/lib/validations';
+import { cleanupUnverifiedAccounts } from '@/lib/authCleanup';
 
 export async function POST(request: Request) {
   try {
+    // 0. Tự động dọn dẹp tài khoản chưa xác thực quá 24h
+    await cleanupUnverifiedAccounts();
+
     const body = await request.json();
     const validation = loginSchema.safeParse(body);
 
@@ -27,7 +31,19 @@ export async function POST(request: Request) {
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
     if (!isPasswordCorrect) {
-      return NextResponse.json({ error: 'Sai mật khẩu' }, { status: 401 });
+      return NextResponse.json({ error: 'Mật khẩu không chính xác' }, { status: 401 });
+    }
+
+    // Chặn đăng nhập nếu chưa xác thực Email
+    if (user.email && user.isEmailVerified === false) {
+      return NextResponse.json(
+        {
+          error: 'Tài khoản chưa xác thực Email! Vui lòng nhập mã OTP để kích hoạt tài khoản.',
+          requiresEmailVerification: true,
+          email: user.email,
+        },
+        { status: 403 }
+      );
     }
 
     // Tạo JWT token sử dụng jose

@@ -21,6 +21,7 @@ export default function AuthForm() {
   const [verifyingEmailStep, setVerifyingEmailStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   
   const router = useRouter();
 
@@ -51,6 +52,12 @@ export default function AuthForm() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.requiresEmailVerification && data.email) {
+          setEmail(data.email);
+          setVerifyingEmailStep(true);
+          toast.error(data.error || (locale === 'en' ? 'Email verification required' : 'Cần xác thực Email trước khi đăng nhập!'));
+          return;
+        }
         throw new Error(data.error || (locale === 'en' ? 'Operation failed' : 'Thao tác thất bại'));
       }
 
@@ -63,8 +70,8 @@ export default function AuthForm() {
           toast.success(
             data.message ||
               (locale === 'en'
-                ? '📧 OTP Verification code sent to your email!'
-                : '📧 Mã OTP xác thực đã được gửi tới email của bạn!')
+                ? '📧 OTP Verification code sent to your email (expires in 15m)!'
+                : '📧 Mã OTP xác thực (hạn 15 phút) đã được gửi tới email của bạn!')
           );
           setVerifyingEmailStep(true);
         } else {
@@ -103,6 +110,31 @@ export default function AuthForm() {
     }
   };
 
+  const handleResendOtp = async () => {
+    if (!email) {
+      toast.error(locale === 'en' ? 'Missing email address' : 'Thiếu địa chỉ email');
+      return;
+    }
+
+    setResending(true);
+    try {
+      const res = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Resend OTP failed');
+
+      toast.success(data.message || (locale === 'en' ? 'New OTP code sent!' : 'Đã gửi lại mã OTP mới!'));
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="glass-card p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
@@ -125,8 +157,8 @@ export default function AuthForm() {
         {/* OTP Email Verification Step */}
         {verifyingEmailStep ? (
           <form onSubmit={handleVerifyOtp} className="space-y-5 relative z-10">
-            <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl text-center text-xs font-semibold text-emerald-400 leading-normal">
-              📧 {locale === 'en' ? 'Check your email inbox for the 6-digit OTP code sent from vnbrayvn@gmail.com' : 'Vui lòng kiểm tra hòm thư Email của bạn để lấy mã OTP 6 chữ số được gửi từ vnbrayvn@gmail.com'}
+            <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl text-center text-xs font-semibold text-amber-400 leading-normal">
+              📧 {locale === 'en' ? 'Check your email inbox for the 6-digit OTP code (expires in 15m).' : 'Vui lòng kiểm tra hòm thư Email của bạn để lấy mã OTP 6 chữ số (hạn 15 phút).'}
             </div>
 
             <div>
@@ -155,6 +187,17 @@ export default function AuthForm() {
                 <span>{t.btnVerifyAction}</span>
               )}
             </button>
+
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resending}
+                className="text-xs font-bold text-slate-400 hover:text-amber-400 transition underline underline-offset-4"
+              >
+                {resending ? (locale === 'en' ? 'Sending new code...' : 'Đang gửi mã mới...') : `🔄 ${t.resendCode}`}
+              </button>
+            </div>
           </form>
         ) : (
           <>

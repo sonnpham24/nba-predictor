@@ -3,9 +3,13 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { registerSchema } from '@/lib/validations';
 import { sendOtpEmail } from '@/lib/mailer';
+import { cleanupUnverifiedAccounts } from '@/lib/authCleanup';
 
 export async function POST(request: Request) {
   try {
+    // 0. Tự động dọn dẹp tài khoản chưa xác thực quá 24h
+    await cleanupUnverifiedAccounts();
+
     const body = await request.json();
     const validation = registerSchema.safeParse(body);
 
@@ -40,11 +44,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Tạo mã xác thực OTP 6 chữ số
+    // 3. Tạo mã OTP 6 chữ số và hạn sử dụng 15 phút
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Tạo tài khoản mới với isEmailVerified = false
+    // 4. Tạo tài khoản mới với isEmailVerified = false và emailVerifyExpires = +15m
     const newUser = await prisma.user.create({
       data: {
         username,
@@ -52,6 +57,7 @@ export async function POST(request: Request) {
         password: hashedPassword,
         isEmailVerified: false,
         emailVerifyCode: otpCode,
+        emailVerifyExpires: expiresAt,
       },
     });
 
@@ -64,7 +70,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: emailSent
-        ? 'Tạo tài khoản thành công! Mã OTP xác thực đã được gửi tới email của bạn.'
+        ? 'Tạo tài khoản thành công! Mã OTP xác thực (hạn 15 phút) đã được gửi tới email của bạn.'
         : 'Tạo tài khoản thành công! Vui lòng nhập mã OTP xác thực.',
       user: { id: newUser.id, username: newUser.username, email: newUser.email },
       requiresEmailVerification: true,

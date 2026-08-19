@@ -21,16 +21,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Email đã được xác thực trước đó' });
     }
 
+    // Kiểm tra hết hạn 15 phút
+    if (user.emailVerifyExpires && new Date() > user.emailVerifyExpires) {
+      return NextResponse.json(
+        { error: 'Mã OTP đã hết hạn (quá 15 phút)! Vui lòng bấm "Gửi lại mã OTP" để nhận mã mới.' },
+        { status: 400 }
+      );
+    }
+
     if (user.emailVerifyCode !== code) {
       return NextResponse.json({ error: 'Mã OTP không chính xác!' }, { status: 400 });
     }
 
-    // Cập nhật isEmailVerified = true
+    // Cập nhật isEmailVerified = true và xóa OTP code/expires
     await prisma.user.update({
       where: { id: user.id },
       data: {
         isEmailVerified: true,
         emailVerifyCode: null,
+        emailVerifyExpires: null,
       },
     });
 
