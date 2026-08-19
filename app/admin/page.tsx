@@ -38,6 +38,9 @@ export default function AdminPage() {
   const [settleWinnerType, setSettleWinnerType] = useState<'teamA' | 'teamB'>('teamA');
   const [settlingCustom, setSettlingCustom] = useState(false);
 
+  // Admin Score Editor State
+  const [scoreAdjustments, setScoreAdjustments] = useState<{ [userId: number]: number }>({});
+
   // Playoff state
   const [playoffMatchups, setPlayoffMatchups] = useState<any[]>([]);
   const [playoffMatchupId, setPlayoffMatchupId] = useState('');
@@ -45,9 +48,12 @@ export default function AdminPage() {
   const [actualScore, setActualScore] = useState('');
   const [playoffLockTime, setPlayoffLockTime] = useState('');
 
+  const minDateTimeString = new Date().toISOString().slice(0, 16);
+
   useEffect(() => {
     requireAdminClient().catch(() => {});
     loadData();
+    setCustomStartTime(minDateTimeString);
   }, []);
 
   const loadData = async () => {
@@ -64,9 +70,20 @@ export default function AdminPage() {
 
       if (tRes.ok) setTeams(await tRes.json());
       if (mRes.ok) setMatchups(await mRes.json());
-      if (uRes.ok) setUsers(await uRes.json());
+      if (uRes.ok) {
+        const userData = await uRes.json();
+        setUsers(userData);
+      }
       if (lRes.ok) setLogs(await lRes.json());
-      if (rLbRes.ok) setRegLeaderboard(await rLbRes.json());
+      if (rLbRes.ok) {
+        const lbData = await rLbRes.json();
+        setRegLeaderboard(lbData);
+        const initAdjustments: { [userId: number]: number } = {};
+        lbData.forEach((u: any) => {
+          initAdjustments[u.id] = u.scoreAdjustment || 0;
+        });
+        setScoreAdjustments(initAdjustments);
+      }
       if (pMRes.ok) setPlayoffMatchups(await pMRes.json());
     } catch (err: any) {
       toast.error(locale === 'en' ? 'Error loading Admin data' : 'Lỗi khi tải dữ liệu Admin');
@@ -149,7 +166,7 @@ export default function AdminPage() {
       setCustomTeamBId('');
       setCustomTeamAName('');
       setCustomTeamBName('');
-      setCustomStartTime('');
+      setCustomStartTime(minDateTimeString);
       loadData();
     } catch (err: any) {
       toast.error(err.message);
@@ -315,6 +332,39 @@ export default function AdminPage() {
     }
   };
 
+  const handleToggleDisable = async (userId: number, currentIsDisabled: boolean) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isDisabled: !currentIsDisabled }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success(currentIsDisabled ? '✅ Account enabled!' : '🚫 Account disabled!');
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleSaveUserScore = async (userId: number) => {
+    const adj = scoreAdjustments[userId] || 0;
+    try {
+      const res = await fetch('/api/admin/users/score', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, scoreAdjustment: adj }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success(data.message || '💾 Saved score adjustment!');
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
   const handleUpdatePlayoffResult = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -354,7 +404,7 @@ export default function AdminPage() {
             ⚙️ ADMIN CONTROL DASHBOARD
           </h1>
           <p className="text-slate-400 text-sm mt-1 leading-normal break-words">
-            {locale === 'en' ? 'Manage 30 NBA teams, custom matchups, scrapers, roster approvals & live scoring' : 'Điều hành toàn bộ dữ liệu 30 đội bóng, Tạo Trận Đấu Tùy Chỉnh, Scraper, Sửa & Duyệt Roster & Người Dùng'}
+            {locale === 'en' ? 'Manage 30 NBA teams, custom matchups, score editor, disable accounts & live scoring' : 'Điều hành toàn bộ dữ liệu 30 đội bóng, Tạo Trận Đấu Tùy Chỉnh, Trình Sửa Điểm, Vô Hiệu Hóa Tài Khoản & Người Dùng'}
           </p>
         </div>
         <button
@@ -405,7 +455,7 @@ export default function AdminPage() {
           { id: 'custom', label: locale === 'en' ? '➕ Create Custom Matchup' : '➕ Tự Tạo Matchup' },
           { id: 'matchups', label: locale === 'en' ? '🗓️ Scraped Matchups' : '🗓️ Matchups Tự Động' },
           { id: 'users', label: locale === 'en' ? '👥 Users & Access' : '👥 Người Dùng & Quyền' },
-          { id: 'leaderboard', label: locale === 'en' ? '📊 Standings' : '📊 Bảng Điểm Regular' },
+          { id: 'leaderboard', label: locale === 'en' ? '📊 Standings & Score Editor' : '📊 Sửa Điểm Standings' },
           { id: 'logs', label: locale === 'en' ? '📜 System Log Stream' : '📜 Nhật Ký System Logs' },
           { id: 'playoff', label: locale === 'en' ? '🏆 Playoff Admin' : '🏆 Playoff Admin' },
         ].map((tab) => (
@@ -650,14 +700,15 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* START TIME */}
+            {/* START TIME WITH MIN CONSTRAINT */}
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                🗓️ Match Start Date & Time (GMT+7)
+                🗓️ Match Start Date & Time (GMT+7) - Minimum: Now
               </label>
               <input
                 type="datetime-local"
                 required
+                min={minDateTimeString}
                 value={customStartTime}
                 onChange={(e) => setCustomStartTime(e.target.value)}
                 className="w-full glass-input p-3.5 rounded-2xl text-xs font-bold text-amber-400"
@@ -857,7 +908,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 4: USERS */}
+      {/* TAB 4: USERS & DISABLE MECHANISM */}
       {activeTab === 'users' && (
         <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
           <table className="w-full text-left text-sm text-slate-300">
@@ -866,22 +917,34 @@ export default function AdminPage() {
                 <th className="p-4 leading-normal">ID</th>
                 <th className="p-4 leading-normal">Username</th>
                 <th className="p-4 leading-normal">Email</th>
-                <th className="p-4 leading-normal">Status</th>
+                <th className="p-4 leading-normal">Email Status</th>
+                <th className="p-4 leading-normal">Account Status</th>
                 <th className="p-4 leading-normal">Role</th>
                 <th className="p-4 leading-normal">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {users.map((u) => (
-                <tr key={u.id}>
+                <tr key={u.id} className={u.isDisabled ? 'bg-red-950/20' : ''}>
                   <td className="p-4 font-mono text-xs text-slate-500">#{u.id}</td>
                   <td className="p-4 font-bold text-white leading-normal break-words">{u.username}</td>
                   <td className="p-4 text-xs text-slate-400 font-mono">{u.email || '-'}</td>
                   <td className="p-4 text-xs">
-                    {u.isEmailVerified ? (
+                    {u.isAdmin || u.isEmailVerified ? (
                       <span className="text-emerald-400 font-bold">✓ Verified</span>
                     ) : (
                       <span className="text-amber-400 font-bold">⏳ Unverified</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-xs">
+                    {u.isDisabled ? (
+                      <span className="bg-red-500/20 text-red-400 border border-red-500/40 px-2.5 py-1 rounded-full font-black uppercase">
+                        🚫 DISABLED
+                      </span>
+                    ) : (
+                      <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1 rounded-full font-bold uppercase">
+                        🟢 ACTIVE
+                      </span>
                     )}
                   </td>
                   <td className="p-4">
@@ -893,12 +956,23 @@ export default function AdminPage() {
                       <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-xs font-bold leading-normal">USER</span>
                     )}
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 space-x-2">
                     <button
                       onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
-                      className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-xl transition leading-normal"
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-xl transition leading-normal"
                     >
                       {u.isAdmin ? 'Remove Admin' : 'Make Admin'}
+                    </button>
+
+                    <button
+                      onClick={() => handleToggleDisable(u.id, u.isDisabled)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-xl transition leading-normal ${
+                        u.isDisabled
+                          ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                          : 'bg-red-600/80 hover:bg-red-600 text-white'
+                      }`}
+                    >
+                      {u.isDisabled ? '✅ Enable' : '🚫 Disable'}
                     </button>
                   </td>
                 </tr>
@@ -908,31 +982,69 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 5: LEADERBOARD */}
+      {/* TAB 5: LEADERBOARD & MANUAL SCORE EDITOR */}
       {activeTab === 'leaderboard' && (
-        <div className="glass-card p-6 rounded-3xl border border-white/10">
-          <h2 className="text-lg font-black text-white mb-4 leading-normal">
-            🏆 {locale === 'en' ? 'Regular Season Standings (+1 pt/game)' : 'Bảng Điểm Regular Season (+1 điểm/trận)'}
-          </h2>
+        <div className="glass-card p-6 rounded-3xl border border-white/10 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-black text-white leading-normal">
+                🏆 {locale === 'en' ? 'Standings & Score Editor' : 'Bảng Điểm Standings & Trình Sửa Điểm'}
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                {locale === 'en'
+                  ? 'Admin can manually adjust user score adjustment points (+/-) and save to immediately update Leaderboard totals.'
+                  : 'Admin có thể tự điều chỉnh số điểm cộng/trừ của từng người chơi và bấm Lưu để cập nhật ngay vào Bảng Xếp Hạng.'}
+              </p>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-300">
               <thead className="bg-slate-950/80 text-xs font-black text-slate-400 border-b border-slate-800">
                 <tr>
                   <th className="p-3 leading-normal">Rank</th>
                   <th className="p-3 leading-normal">User</th>
-                  <th className="p-3 text-center leading-normal">Total Picks</th>
-                  <th className="p-3 text-center leading-normal">Correct</th>
-                  <th className="p-3 text-right leading-normal">Points</th>
+                  <th className="p-3 text-center leading-normal">Regular Pts</th>
+                  <th className="p-3 text-center leading-normal">Playoff Pts</th>
+                  <th className="p-3 text-center leading-normal">Score Adj (+/-)</th>
+                  <th className="p-3 text-right leading-normal">Total Score</th>
+                  <th className="p-3 text-center leading-normal">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {regLeaderboard.map((lb, idx) => (
-                  <tr key={lb.id}>
+                  <tr key={lb.id} className="hover:bg-slate-800/40 transition">
                     <td className="p-3 font-black text-amber-400">#{idx + 1}</td>
-                    <td className="p-3 font-bold text-white leading-normal break-words">{lb.username}</td>
-                    <td className="p-3 text-center font-mono">{lb.totalPredictions}</td>
-                    <td className="p-3 text-center font-bold text-emerald-400">{lb.correctPredictions}</td>
-                    <td className="p-3 text-right font-black text-lg text-amber-400 font-mono">{lb.totalScore} pts</td>
+                    <td className="p-3 font-bold text-white leading-normal break-words">
+                      {lb.username}
+                      {lb.isAdmin && <span className="ml-2 text-[10px] text-amber-400 font-mono">(Admin)</span>}
+                    </td>
+                    <td className="p-3 text-center font-mono text-slate-300">{lb.regularScore}</td>
+                    <td className="p-3 text-center font-mono text-slate-300">{lb.playoffScore}</td>
+                    <td className="p-3 text-center">
+                      <input
+                        type="number"
+                        value={scoreAdjustments[lb.id] !== undefined ? scoreAdjustments[lb.id] : (lb.scoreAdjustment || 0)}
+                        onChange={(e) =>
+                          setScoreAdjustments({
+                            ...scoreAdjustments,
+                            [lb.id]: parseInt(e.target.value || '0'),
+                          })
+                        }
+                        className="w-20 glass-input p-1.5 text-center text-xs font-bold text-amber-400 rounded-xl"
+                      />
+                    </td>
+                    <td className="p-3 text-right font-black text-lg text-amber-400 font-mono">
+                      {lb.totalScore} pts
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => handleSaveUserScore(lb.id)}
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl transition shadow"
+                      >
+                        💾 {locale === 'en' ? 'Save Score' : 'Lưu Điểm'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

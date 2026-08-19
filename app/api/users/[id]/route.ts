@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getUserFromRequest } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,6 +12,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'ID người dùng không hợp lệ' }, { status: 400 });
     }
 
+    const requester = await getUserFromRequest(req);
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -21,6 +24,8 @@ export async function GET(req: NextRequest) {
         avatar: true,
         isAdmin: true,
         isEmailVerified: true,
+        isDisabled: true,
+        scoreAdjustment: true,
         createdAt: true,
         favoriteTeam: {
           select: {
@@ -36,6 +41,11 @@ export async function GET(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 });
+    }
+
+    // Nếu tài khoản bị Disable và người xem không phải Admin -> Ẩn 404
+    if (user.isDisabled && (!requester || !requester.isAdmin)) {
+      return NextResponse.json({ error: 'Tài khoản người dùng này không khả dụng' }, { status: 404 });
     }
 
     // Lấy 10 dự đoán gần đây nhất
@@ -105,7 +115,7 @@ export async function GET(req: NextRequest) {
     let regScore = 0;
     let regCorrect = 0;
     regPredictions.forEach((p) => {
-      if (p.matchup.isSettled && p.matchup.actualWinnerId === p.predictedWinnerId) {
+      if (p.matchup.isSettled && (p.matchup.actualWinnerId === p.predictedWinnerId || (p.matchup.customWinner && p.customPredictedWinner === p.matchup.customWinner))) {
         regScore += 1;
         regCorrect += 1;
       }
@@ -120,7 +130,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const totalScore = regScore + playoffScore;
+    const totalScore = regScore + playoffScore + (user.scoreAdjustment || 0);
     const totalPicks = regPredictions.length + playoffPredictions.length;
     const totalCorrect = regCorrect + playoffCorrect;
 

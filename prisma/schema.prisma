@@ -22,6 +22,8 @@ model User {
   favoriteTeam       Team?               @relation("UserFavoriteTeam", fields: [favoriteTeamId], references: [id])
   isAdmin            Boolean             @default(false)
   isEmailVerified    Boolean             @default(false)
+  isDisabled         Boolean             @default(false)
+  scoreAdjustment    Int                 @default(0)
   emailVerifyCode    String?
   emailVerifyExpires DateTime?
   createdAt          DateTime            @default(now())

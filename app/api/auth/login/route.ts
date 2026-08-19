@@ -27,6 +27,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tài khoản không tồn tại' }, { status: 404 });
     }
 
+    // Chặn đăng nhập nếu tài khoản bị vô hiệu hóa (Disabled)
+    if (user.isDisabled) {
+      return NextResponse.json(
+        {
+          error: 'Tài khoản của bạn đã bị vô hiệu hóa (Disabled). Vui lòng liên hệ Admin để được hỗ trợ.',
+        },
+        { status: 403 }
+      );
+    }
+
     // So sánh mật khẩu
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
@@ -34,8 +44,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Mật khẩu không chính xác' }, { status: 401 });
     }
 
-    // Chặn đăng nhập nếu chưa xác thực Email
-    if (user.email && user.isEmailVerified === false) {
+    // Chặn đăng nhập nếu chưa xác thực Email (trừ tài khoản Admin)
+    if (!user.isAdmin && user.email && user.isEmailVerified === false) {
       return NextResponse.json(
         {
           error: 'Tài khoản chưa xác thực Email! Vui lòng nhập mã OTP để kích hoạt tài khoản.',

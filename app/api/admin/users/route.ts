@@ -10,7 +10,12 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         username: true,
+        email: true,
+        isEmailVerified: true,
+        isDisabled: true,
         isAdmin: true,
+        scoreAdjustment: true,
+        createdAt: true,
         _count: {
           select: {
             predictions: true,
@@ -31,18 +36,22 @@ export async function PUT(req: NextRequest) {
   try {
     await requireAdminFromRequest(req);
 
-    const { userId, isAdmin } = await req.json();
+    const { userId, isAdmin, isDisabled } = await req.json();
 
-    if (!userId || typeof isAdmin !== 'boolean') {
-      return NextResponse.json({ error: 'Dữ liệu không hợp lệ' }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Thiếu userId' }, { status: 400 });
     }
+
+    const updateData: any = {};
+    if (typeof isAdmin === 'boolean') updateData.isAdmin = isAdmin;
+    if (typeof isDisabled === 'boolean') updateData.isDisabled = isDisabled;
 
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: { isAdmin },
+      data: updateData,
     });
 
-    return NextResponse.json({ message: '✅ Cập nhật quyền người dùng thành công', user: updated });
+    return NextResponse.json({ message: '✅ Cập nhật tài khoản thành công', user: updated });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi server' }, { status: 500 });
   }
