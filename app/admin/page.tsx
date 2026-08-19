@@ -160,7 +160,6 @@ export default function AdminPage() {
     }
   };
 
-  // Playoff action handlers
   const handleUpdatePlayoffResult = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -183,39 +182,73 @@ export default function AdminPage() {
     }
   };
 
+  const pendingApprovalsCount = teams.filter((t) => !t.isApproved && t.pendingData).length;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="max-w-7xl mx-auto px-4 py-10">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 border-b border-slate-800/80 pb-6">
         <div>
-          <h1 className="text-3xl font-black text-white">⚙️ Admin Control Panel</h1>
-          <p className="text-slate-400 text-sm mt-1">Quản lý đội bóng, cào dữ liệu, duyệt Roster, quản lý người dùng & logs hệ thống</p>
+          <div className="flex items-center space-x-3">
+            <span className="text-xs font-black bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full border border-amber-500/30">
+              COMMAND CENTER
+            </span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-white mt-2">⚙️ ADMIN CONTROL DASHBOARD</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Điều hành toàn bộ dữ liệu 30 đội bóng, Scraper, Duyệt Roster, Matchups Live & Người Dùng
+          </p>
         </div>
         <button
           onClick={loadData}
           disabled={loading}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition"
+          className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-2xl text-xs font-black border border-slate-700 shadow-lg transition flex items-center justify-center space-x-2"
         >
-          🔄 Làm mới dữ liệu
+          <span>🔄</span>
+          <span>{loading ? 'ĐANG LÀM MỚI...' : 'LÀM MỚI DỮ LIỆU'}</span>
         </button>
       </div>
 
-      {/* Admin Tabs */}
-      <div className="flex overflow-x-auto space-x-2 border-b border-slate-800 pb-3 mb-8">
+      {/* Summary Metrics Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col">
+          <span className="text-xs font-bold text-slate-400 uppercase">TỔNG ĐỘI BÓNG</span>
+          <span className="text-2xl font-black text-white mt-1">{teams.length} / 30</span>
+        </div>
+
+        <div className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col">
+          <span className="text-xs font-bold text-slate-400 uppercase">CHỜ ADMIN DUYỆT</span>
+          <span className="text-2xl font-black text-amber-400 mt-1">{pendingApprovalsCount} Đội</span>
+        </div>
+
+        <div className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col">
+          <span className="text-xs font-bold text-slate-400 uppercase">TRẬN REGULAR SEASON</span>
+          <span className="text-2xl font-black text-blue-400 mt-1">{matchups.length} Trận</span>
+        </div>
+
+        <div className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col">
+          <span className="text-xs font-bold text-slate-400 uppercase">NGƯỜI DÙNG HỆ THỐNG</span>
+          <span className="text-2xl font-black text-emerald-400 mt-1">{users.length} Mở</span>
+        </div>
+      </div>
+
+      {/* Sub Tabs Bar */}
+      <div className="flex overflow-x-auto space-x-2 border-b border-slate-800 pb-3 mb-8 scrollbar-none">
         {[
-          { id: 'teams', label: '🏀 Quản Lý Đội Bóng' },
+          { id: 'teams', label: '🏀 Quản Lý 30 Đội Bóng' },
           { id: 'matchups', label: '🗓️ Regular Matchups' },
-          { id: 'users', label: '👥 Người Dùng' },
-          { id: 'leaderboard', label: '📊 Bảng Điểm' },
-          { id: 'logs', label: '📜 System Logs' },
+          { id: 'users', label: '👥 Người Dùng & Quyền' },
+          { id: 'leaderboard', label: '📊 Bảng Điểm Regular' },
+          { id: 'logs', label: '📜 Nhật Ký System Logs' },
           { id: 'playoff', label: '🏆 Playoff Admin' },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition ${
+            className={`px-5 py-3 rounded-2xl font-black text-xs sm:text-sm whitespace-nowrap transition-all duration-300 ${
               activeTab === tab.id
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-amber-500/25 scale-105'
+                : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
             }`}
           >
             {tab.label}
@@ -223,43 +256,45 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Tab 1: Teams Management */}
+      {/* TAB 1: TEAMS MANAGEMENT */}
       {activeTab === 'teams' && (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+          <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-white">Quản lý 30 đội NBA chính thức</h2>
-              <p className="text-xs text-slate-400 mt-1">Cào dữ liệu đội bóng từ ESPN API, tên + logo được lưu trực tiếp, Roster lưu ở trạng thái Chờ duyệt.</p>
+              <h2 className="text-lg font-black text-white">30 Đội Bóng NBA Chính Thức</h2>
+              <p className="text-xs text-slate-400 mt-1">Cào Tên + Logo trực tiếp, thông tin Roster lưu ở dạng Chờ Duyệt (Pending Data).</p>
             </div>
             <button
               onClick={handleScrapeTeams}
               disabled={loading}
-              className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-lg hover:brightness-110 transition"
+              className="px-6 py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase shadow-xl shadow-amber-500/20 hover:scale-105 transition duration-300"
             >
-              🚀 Cào dữ liệu 30 Đội Bóng
+              🚀 CÀO DỮ LIỆU 30 ĐỘI BÓNG
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {teams.map((t) => (
               <div
                 key={t.id}
                 onClick={() => handleSelectTeamDetail(t.id)}
-                className={`bg-slate-900 border p-4 rounded-2xl cursor-pointer transition flex flex-col items-center justify-between text-center ${
-                  t.isApproved ? 'border-emerald-500/40 hover:border-emerald-400' : 'border-amber-500/40 hover:border-amber-400'
+                className={`glass-card p-5 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col items-center justify-between text-center border ${
+                  t.isApproved
+                    ? 'border-emerald-500/40 hover:border-emerald-400 hover:shadow-emerald-500/10'
+                    : 'border-amber-500/40 hover:border-amber-400 hover:shadow-amber-500/10'
                 }`}
               >
-                <img src={t.logo} alt={t.name} className="w-14 h-14 object-contain mb-2" />
+                <img src={t.logo} alt={t.name} className="w-16 h-16 object-contain mb-3 drop-shadow-md" />
                 <span className="text-xs font-bold text-slate-200 line-clamp-1">{t.name}</span>
-                <span className="text-[10px] text-slate-400 font-mono mt-1">{t.abbreviation}</span>
-                <div className="mt-2">
+                <span className="text-[10px] text-slate-400 font-mono mt-0.5">{t.abbreviation}</span>
+                <div className="mt-3">
                   {t.isApproved ? (
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                      Đã duyệt
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/30">
+                      ✓ Đã duyệt
                     </span>
                   ) : (
-                    <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/30">
-                      Chờ duyệt
+                    <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30">
+                      ⏳ Chờ duyệt
                     </span>
                   )}
                 </div>
@@ -267,58 +302,56 @@ export default function AdminPage() {
             ))}
           </div>
 
-          {/* Modal / Team Inspection */}
+          {/* Inspection Modal */}
           {selectedTeam && (
-            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-                  <div className="flex items-center space-x-3">
-                    <img src={selectedTeam.logo} alt={selectedTeam.name} className="w-12 h-12 object-contain" />
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="glass-card max-w-3xl w-full p-8 rounded-3xl border border-amber-500/40 max-h-[90vh] overflow-y-auto shadow-2xl relative">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+                  <div className="flex items-center space-x-4">
+                    <img src={selectedTeam.logo} alt={selectedTeam.name} className="w-14 h-14 object-contain" />
                     <div>
-                      <h3 className="text-xl font-bold text-white">{selectedTeam.name}</h3>
+                      <h3 className="text-2xl font-black text-white">{selectedTeam.name}</h3>
                       <span className="text-xs text-slate-400 font-mono">ID: {selectedTeam.id} | {selectedTeam.abbreviation}</span>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedTeam(null)} className="text-slate-400 hover:text-white font-bold text-lg">
+                  <button onClick={() => setSelectedTeam(null)} className="text-slate-400 hover:text-white font-bold text-xl">
                     ✕
                   </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() => handleScrapeRoster(selectedTeam.id)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition"
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition shadow-lg"
                     >
                       🔄 Cào lại Roster (Roster Changes)
                     </button>
                     {selectedTeam.pendingData && (
                       <button
                         onClick={() => handleApproveTeamData(selectedTeam.id)}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition"
+                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold transition shadow-lg"
                       >
-                        ✅ Duyệt thông tin (Approve)
+                        ✅ Duyệt dữ liệu (Approve Data)
                       </button>
                     )}
                   </div>
 
-                  {/* Pending Data Preview */}
                   {selectedTeam.pendingData && (
-                    <div className="bg-amber-950/20 border border-amber-500/30 rounded-2xl p-4">
+                    <div className="bg-amber-950/30 border border-amber-500/40 rounded-2xl p-5">
                       <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
                         ⚠️ Dữ liệu mới cào được (Pending Approval) - {selectedTeam.pendingData.athleteCount} cầu thủ
                       </h4>
                       <p className="text-xs text-slate-300">Coach: {selectedTeam.pendingData.coach}</p>
-                      <div className="max-h-40 overflow-y-auto mt-2 text-xs text-slate-400 bg-slate-950 p-2 rounded-lg font-mono">
+                      <div className="max-h-48 overflow-y-auto mt-3 text-xs text-slate-400 bg-slate-950 p-3 rounded-xl font-mono">
                         {JSON.stringify(selectedTeam.pendingData.athletes?.slice(0, 5), null, 2)}
                       </div>
                     </div>
                   )}
 
-                  {/* Scraped / Approved Data Preview */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5">
                     <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">
-                      ✅ Dữ liệu hiện tại đã được duyệt (Approved Live Data)
+                      ✅ Dữ liệu hiện tại đang công khai (Approved Live Data)
                     </h4>
                     {selectedTeam.scrapedData ? (
                       <div>
@@ -336,81 +369,83 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tab 2: Regular Matchups */}
+      {/* TAB 2: MATCHUPS */}
       {activeTab === 'matchups' && (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+          <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-white">Quản lý Lịch thi đấu & Live Score</h2>
-              <p className="text-xs text-slate-400 mt-1">Cào lịch thi đấu 7 ngày tới và kích hoạt đồng bộ Live score + tự động chấm điểm.</p>
+              <h2 className="text-lg font-black text-white">Quản Lý Trận Đấu & Live Sync</h2>
+              <p className="text-xs text-slate-400 mt-1">Kích hoạt cào lịch thi đấu 7 ngày và đồng bộ tỉ số Live kèm tự động chấm điểm.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleFetchSchedule}
                 disabled={loading}
-                className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow hover:bg-amber-400 transition"
+                className="px-4 py-2.5 bg-amber-500 text-slate-950 font-black rounded-2xl text-xs uppercase shadow hover:bg-amber-400 transition"
               >
-                🗓️ Cào lịch thi đấu 7 ngày
+                🗓️ Cào lịch 7 ngày
               </button>
               <button
                 onClick={handleLiveSync}
                 disabled={loading}
-                className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs shadow hover:bg-emerald-500 transition"
+                className="px-4 py-2.5 bg-emerald-600 text-white font-black rounded-2xl text-xs uppercase shadow hover:bg-emerald-500 transition"
               >
-                ⚡ Live Sync & Tự động chấm điểm
+                ⚡ Live Sync & Tự động Chấm Điểm
               </button>
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950 text-xs font-bold text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="p-3">ID</th>
-                  <th className="p-3">Matchup</th>
-                  <th className="p-3">Giờ thi đấu (GMT+7)</th>
-                  <th className="p-3">Trạng thái</th>
-                  <th className="p-3">Tỉ số / Kết quả</th>
-                  <th className="p-3">Khóa đoán (-30m)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {matchups.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-800/40 transition">
-                    <td className="p-3 font-mono text-xs">{m.id}</td>
-                    <td className="p-3 font-bold text-white">
-                      {m.teamA.name} vs {m.teamB.name}
-                    </td>
-                    <td className="p-3 text-xs text-slate-400">
-                      {new Date(m.startTime).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
-                    </td>
-                    <td className="p-3 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full font-bold ${
-                        m.status === 'FINISHED' ? 'bg-emerald-500/20 text-emerald-400' :
-                        m.status === 'IN_PROGRESS' ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {m.status}
-                      </span>
-                    </td>
-                    <td className="p-3 font-mono font-bold text-amber-400">
-                      {m.actualScore || (m.scoreA !== null ? `${m.scoreA} - ${m.scoreB}` : '-')}
-                    </td>
-                    <td className="p-3 text-xs text-slate-400">
-                      {new Date(m.lockTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}
-                    </td>
+          <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-950/80 text-xs font-black text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="p-4">ID</th>
+                    <th className="p-4">Matchup</th>
+                    <th className="p-4">Giờ thi đấu (GMT+7)</th>
+                    <th className="p-4">Trạng thái</th>
+                    <th className="p-4">Tỉ số Real</th>
+                    <th className="p-4">Khóa đoán (-30m)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {matchups.map((m) => (
+                    <tr key={m.id} className="hover:bg-slate-800/40 transition">
+                      <td className="p-4 font-mono text-xs text-slate-500">#{m.id}</td>
+                      <td className="p-4 font-bold text-white">
+                        {m.teamA.name} vs {m.teamB.name}
+                      </td>
+                      <td className="p-4 text-xs text-slate-400">
+                        {new Date(m.startTime).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
+                      </td>
+                      <td className="p-4 text-xs">
+                        <span className={`px-2.5 py-1 rounded-full font-bold ${
+                          m.status === 'FINISHED' ? 'bg-emerald-500/20 text-emerald-400' :
+                          m.status === 'IN_PROGRESS' ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-slate-800 text-slate-400'
+                        }`}>
+                          {m.status}
+                        </span>
+                      </td>
+                      <td className="p-4 font-mono font-black text-amber-400">
+                        {m.actualScore || (m.scoreA !== null ? `${m.scoreA} - ${m.scoreB}` : '-')}
+                      </td>
+                      <td className="p-4 text-xs text-slate-400 font-mono">
+                        {new Date(m.lockTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Tab 3: Users */}
+      {/* TAB 3: USERS */}
       {activeTab === 'users' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
           <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-950 text-xs font-bold text-slate-400 border-b border-slate-800">
+            <thead className="bg-slate-950/80 text-xs font-black text-slate-400 border-b border-slate-800">
               <tr>
                 <th className="p-4">ID</th>
                 <th className="p-4">Tài khoản</th>
@@ -420,26 +455,26 @@ export default function AdminPage() {
                 <th className="p-4">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-800/60">
               {users.map((u) => (
                 <tr key={u.id}>
-                  <td className="p-4 font-mono text-xs">{u.id}</td>
+                  <td className="p-4 font-mono text-xs text-slate-500">#{u.id}</td>
                   <td className="p-4 font-bold text-white">{u.username}</td>
-                  <td className="p-4">{u._count.predictions}</td>
-                  <td className="p-4">{u._count.regularPredictions}</td>
+                  <td className="p-4 font-mono">{u._count.predictions}</td>
+                  <td className="p-4 font-mono">{u._count.regularPredictions}</td>
                   <td className="p-4">
                     {u.isAdmin ? (
-                      <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-xs font-bold border border-amber-500/30">
-                        Admin
+                      <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-black border border-amber-500/30">
+                        PRO ADMIN
                       </span>
                     ) : (
-                      <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-xs">User</span>
+                      <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-xs font-bold">USER</span>
                     )}
                   </td>
                   <td className="p-4">
                     <button
                       onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
-                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-lg transition"
+                      className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-xl transition"
                     >
                       {u.isAdmin ? 'Gỡ Admin' : 'Cấp Admin'}
                     </button>
@@ -451,29 +486,29 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tab 4: Leaderboards */}
+      {/* TAB 4: LEADERBOARD */}
       {activeTab === 'leaderboard' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-4">🏆 Bảng Xếp Hạng Regular Season (+1 điểm/trận)</h2>
+        <div className="glass-card p-6 rounded-3xl border border-white/10">
+          <h2 className="text-lg font-black text-white mb-4">🏆 Bảng Điểm Regular Season (+1 điểm/trận)</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950 text-xs font-bold text-slate-400 border-b border-slate-800">
+              <thead className="bg-slate-950/80 text-xs font-black text-slate-400 border-b border-slate-800">
                 <tr>
-                  <th className="p-3">Thứ hạng</th>
+                  <th className="p-3">Hạng</th>
                   <th className="p-3">Người dùng</th>
-                  <th className="p-3">Tổng lượt đoán</th>
-                  <th className="p-3">Đoán đúng</th>
-                  <th className="p-3">Tổng điểm (+1)</th>
+                  <th className="p-3 text-center">Tổng lượt đoán</th>
+                  <th className="p-3 text-center">Đoán đúng</th>
+                  <th className="p-3 text-right">Tổng điểm</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-800/60">
                 {regLeaderboard.map((lb, idx) => (
                   <tr key={lb.id}>
-                    <td className="p-3 font-bold text-amber-400">#{idx + 1}</td>
+                    <td className="p-3 font-black text-amber-400">#{idx + 1}</td>
                     <td className="p-3 font-bold text-white">{lb.username}</td>
-                    <td className="p-3">{lb.totalPredictions}</td>
-                    <td className="p-3 text-emerald-400 font-bold">{lb.correctPredictions}</td>
-                    <td className="p-3 text-lg font-black text-amber-400">{lb.score} pts</td>
+                    <td className="p-3 text-center font-mono">{lb.totalPredictions}</td>
+                    <td className="p-3 text-center font-bold text-emerald-400">{lb.correctPredictions}</td>
+                    <td className="p-3 text-right font-black text-lg text-amber-400">{lb.score} pts</td>
                   </tr>
                 ))}
               </tbody>
@@ -482,44 +517,44 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tab 5: Logs */}
+      {/* TAB 5: LOGS */}
       {activeTab === 'logs' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-4">📜 Nhật Ký Hệ Thống (System Logs)</h2>
+        <div className="glass-card p-6 rounded-3xl border border-white/10">
+          <h2 className="text-lg font-black text-white mb-4">📜 System Log Stream</h2>
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {logs.map((log) => (
-              <div key={log.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs space-y-1">
+              <div key={log.id} className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl text-xs space-y-1 font-mono">
                 <div className="flex items-center justify-between">
-                  <span className={`font-bold ${log.level === 'ERROR' ? 'text-red-400' : 'text-amber-400'}`}>
+                  <span className={`font-black ${log.level === 'ERROR' ? 'text-red-400' : 'text-amber-400'}`}>
                     [{log.level}] {log.action}
                   </span>
-                  <span className="text-slate-500 font-mono">
+                  <span className="text-slate-500">
                     {new Date(log.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
                   </span>
                 </div>
-                <p className="text-slate-300 font-mono">{log.details}</p>
+                <p className="text-slate-300">{log.details}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Tab 6: Playoff Admin */}
+      {/* TAB 6: PLAYOFF ADMIN */}
       {activeTab === 'playoff' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-          <h2 className="text-lg font-bold text-white">🏆 Quản lý Playoff Predictor (Tính năng cũ)</h2>
+        <div className="glass-card p-8 rounded-3xl border border-white/10 space-y-6">
+          <h2 className="text-lg font-black text-white">🏆 Playoff Admin Controls</h2>
 
           <form onSubmit={handleUpdatePlayoffResult} className="space-y-4 max-w-lg">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Chọn Matchup Playoff</label>
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-2">Chọn Matchup Playoff</label>
               <select
                 value={playoffMatchupId}
                 onChange={(e) => setPlayoffMatchupId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white"
+                className="w-full glass-input p-3 rounded-2xl text-sm text-white font-bold"
               >
-                <option value="">-- Chọn trận --</option>
+                <option value="" className="bg-slate-900">-- Chọn trận --</option>
                 {playoffMatchups.map((m) => (
-                  <option key={m.id} value={m.id}>
+                  <option key={m.id} value={m.id} className="bg-slate-900">
                     Round {m.round}: {m.teamA} vs {m.teamB}
                   </option>
                 ))}
@@ -528,31 +563,31 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Đội thắng thật</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-2">Đội thắng thật</label>
                 <input
                   type="text"
                   value={actualWinner}
                   onChange={(e) => setActualWinner(e.target.value)}
                   placeholder="VD: LAL"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white"
+                  className="w-full glass-input p-3 rounded-2xl text-sm font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Tỷ số thật</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-2">Tỷ số thật</label>
                 <input
                   type="text"
                   value={actualScore}
                   onChange={(e) => setActualScore(e.target.value)}
                   placeholder="VD: 4-2"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white"
+                  className="w-full glass-input p-3 rounded-2xl text-sm font-bold"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-sm shadow hover:bg-amber-400 transition"
+              className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-2xl text-xs uppercase shadow-lg shadow-amber-500/20 hover:scale-105 transition duration-300"
             >
               Cập nhật kết quả Playoff
             </button>
