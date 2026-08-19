@@ -4,6 +4,17 @@ import { logSystemEvent } from '@/lib/logger';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
+const EASTERN_TEAMS_SET = new Set([
+  'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WAS'
+]);
+
+export function getNormalizedConference(abbrev: string): 'Eastern Conference' | 'Western Conference' {
+  if (EASTERN_TEAMS_SET.has(abbrev.toUpperCase())) {
+    return 'Eastern Conference';
+  }
+  return 'Western Conference';
+}
+
 export async function fetchNbaTeams() {
   try {
     const res = await fetch(`${ESPN_BASE_URL}/teams`, { cache: 'no-store' });
@@ -20,6 +31,7 @@ export async function fetchNbaTeams() {
       const abbreviation = t.abbreviation || t.shortDisplayName || name.substring(0, 3).toUpperCase();
       const logo = t.logos?.[0]?.href || `https://a.espncdn.com/i/teamlogos/nba/500/${abbreviation.toLowerCase()}.png`;
       const color = t.color ? `#${t.color}` : '#000000';
+      const conference = getNormalizedConference(abbreviation);
 
       const existing = await prisma.team.findUnique({ where: { id: teamId } });
 
@@ -30,6 +42,7 @@ export async function fetchNbaTeams() {
           abbreviation,
           logo,
           color,
+          conference,
         },
         create: {
           id: teamId,
@@ -37,6 +50,7 @@ export async function fetchNbaTeams() {
           abbreviation,
           logo,
           color,
+          conference,
           isApproved: existing?.isApproved ?? false,
           scrapedData: existing?.scrapedData ?? null,
         },
@@ -45,7 +59,7 @@ export async function fetchNbaTeams() {
       count++;
     }
 
-    await logSystemEvent('FETCH_TEAMS', `Cào thành công basic info của ${count} đội bóng từ ESPN API.`, 'INFO');
+    await logSystemEvent('FETCH_TEAMS', `Cào thành công 30 đội bóng với Conference chuẩn từ ESPN API.`, 'INFO');
     return { success: true, count };
   } catch (err: any) {
     await logSystemEvent('FETCH_TEAMS_ERROR', `Lỗi khi cào 30 đội bóng: ${err.message}`, 'ERROR');
@@ -59,7 +73,7 @@ export async function scrapeTeamRoster(teamId: number) {
     if (!res.ok) throw new Error(`ESPN Roster API returned status ${res.status}`);
 
     const data = await res.json();
-    const athletes = (data.athletes || []).map((a: any) => ({
+    const athletes = (data.athletes || []).map((a: any, idx: number) => ({
       id: a.id,
       fullName: a.fullName,
       displayName: a.displayName,
@@ -68,6 +82,7 @@ export async function scrapeTeamRoster(teamId: number) {
       height: a.displayHeight || 'N/A',
       weight: a.displayWeight || 'N/A',
       headshot: a.headshot?.href || null,
+      starter: idx < 5 || a.starter === true, // Mark top 5 as Starters
     }));
 
     const rosterData = {
@@ -83,7 +98,7 @@ export async function scrapeTeamRoster(teamId: number) {
       where: { id: teamId },
       data: {
         pendingData: pendingDataJson,
-        isApproved: false, // Yêu cầu admin duyệt lại
+        isApproved: false,
       },
     });
 
@@ -121,7 +136,6 @@ export async function approveTeamData(teamId: number) {
 
 export async function fetchUpcomingSchedule(daysAhead = 7) {
   try {
-    // Đảm bảo đã có 30 đội bóng
     const teamCount = await prisma.team.count();
     if (teamCount === 0) {
       await fetchNbaTeams();
@@ -154,26 +168,34 @@ export async function fetchUpcomingSchedule(daysAhead = 7) {
         const teamAId = parseInt(homeComp.team.id);
         const teamBId = parseInt(awayComp.team.id);
 
-        // Đảm bảo cả 2 đội tồn tại trong DB
+        const abbrevA = homeComp.team.abbreviation || 'TMA';
+        const abbrevB = awayComp.team.abbreviation || 'TMB';
+
         await prisma.team.upsert({
           where: { id: teamAId },
-          update: {},
+          update: {
+            conference: getNormalizedConference(abbrevA),
+          },
           create: {
             id: teamAId,
             name: homeComp.team.displayName || homeComp.team.name,
-            abbreviation: homeComp.team.abbreviation || 'TMA',
-            logo: homeComp.team.logo || `https://a.espncdn.com/i/teamlogos/nba/500/${homeComp.team.abbreviation?.toLowerCase()}.png`,
+            abbreviation: abbrevA,
+            logo: homeComp.team.logo || `https://a.espncdn.com/i/teamlogos/nba/500/${abbrevA.toLowerCase()}.png`,
+            conference: getNormalizedConference(abbrevA),
           },
         });
 
         await prisma.team.upsert({
           where: { id: teamBId },
-          update: {},
+          update: {
+            conference: getNormalizedConference(abbrevB),
+          },
           create: {
             id: teamBId,
             name: awayComp.team.displayName || awayComp.team.name,
-            abbreviation: awayComp.team.abbreviation || 'TMB',
-            logo: awayComp.team.logo || `https://a.espncdn.com/i/teamlogos/nba/500/${awayComp.team.abbreviation?.toLowerCase()}.png`,
+            abbreviation: abbrevB,
+            logo: awayComp.team.logo || `https://a.espncdn.com/i/teamlogos/nba/500/${abbrevB.toLowerCase()}.png`,
+            conference: getNormalizedConference(abbrevB),
           },
         });
 

@@ -48,8 +48,8 @@ export const translations = {
     // Standings Page
     standingsTitle: '📈 NBA 2026-27 CONFERENCE STANDINGS',
     standingsSub: 'Real-time team standings for the 2026-27 season, split by Eastern & Western Conference.',
-    eastConference: '🌇 Eastern Conference',
-    westConference: '🌅 Western Conference',
+    eastConference: 'Eastern Conference',
+    westConference: 'Western Conference',
     win: 'W',
     loss: 'L',
     pct: 'PCT',
@@ -61,7 +61,7 @@ export const translations = {
     // Teams List Page
     teamsTitle: '🏀 30 OFFICIAL NBA TEAMS',
     teamsSub: 'Explore all 30 NBA teams, head coaches, conferences, and verified player rosters.',
-    searchTeamPlaceholder: 'Search team by name or abbreviation...',
+    searchTeamPlaceholder: 'Search team name, abbreviation, or player name (e.g. Steph Curry)...',
     allConferences: 'All Conferences',
 
     // Matchup Detail
@@ -73,10 +73,13 @@ export const translations = {
 
     // Team Detail
     teamDetailTitle: 'Team Overview',
+    backToTeams: '← Back to NBA Teams List',
     conference: 'Conference',
     coach: 'Head Coach',
     verifiedRoster: '✅ Verified Official NBA Roster',
     pendingRoster: '⏳ Pending Admin Verification',
+    lastUpdated: 'Last Updated',
+    starting5Title: '⭐ Starting 5 (Starters Lineup)',
     rosterTableTitle: '🏀 Official Player Roster',
     player: 'Player',
     jersey: 'Jersey #',
@@ -166,8 +169,8 @@ export const translations = {
     // Standings Page
     standingsTitle: '📈 BẢNG XẾP HẠNG THÀNH TÍCH NBA 2026-27',
     standingsSub: 'Bảng xếp hạng thành tích các đội bóng NBA mùa giải 2026-27 theo Miền Đông và Miền Tây.',
-    eastConference: '<ctrl42> Miền Đông (Eastern Conference)',
-    westConference: '🌅 Miền Tây (Western Conference)',
+    eastConference: 'Miền Đông (Eastern Conference)',
+    westConference: 'Miền Tây (Western Conference)',
     win: 'Thắng',
     loss: 'Thua',
     pct: 'PCT',
@@ -179,7 +182,7 @@ export const translations = {
     // Teams List Page
     teamsTitle: '🏀 DANH SÁCH 30 ĐỘI BÓNG NBA CHÍNH THỨC',
     teamsSub: 'Khám phá 30 đội bóng NBA, HLV trưởng, khu vực miền và danh sách cầu thủ (Roster).',
-    searchTeamPlaceholder: 'Tìm kiếm đội bóng theo tên hoặc tên viết tắt...',
+    searchTeamPlaceholder: 'Tìm kiếm theo tên đội, chữ viết tắt, hoặc tên cầu thủ (ví dụ: Steph Curry)...',
     allConferences: 'Tất cả các Miền',
 
     // Matchup Detail
@@ -191,10 +194,13 @@ export const translations = {
 
     // Team Detail
     teamDetailTitle: 'Thông Tin Đội Bóng',
+    backToTeams: '← Quay lại Danh Sách Đội Bóng',
     conference: 'Khu vực / Miền',
     coach: 'Huấn luyện viên',
     verifiedRoster: '✅ Thông tin Roster chính thức đã duyệt',
     pendingRoster: '⏳ Đang chờ Admin duyệt dữ liệu chi tiết',
+    lastUpdated: 'Cập nhật lần cuối',
+    starting5Title: '⭐ Starting 5 (Đội hình xuất phát)',
     rosterTableTitle: '🏀 Danh Sách Cầu Thủ (Roster)',
     player: 'Cầu thủ',
     jersey: 'Số áo',

@@ -19,19 +19,19 @@ html.light body {
 }
 
 html.light .glass-card {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
   color: #0f172a;
 }
 
 html.light .glass-navbar {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.9);
 }
 
 html.light .glass-input {
@@ -47,9 +47,9 @@ html.light .glass-input:focus {
 
 html.light .bg-stadium-mesh {
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.06) 0%, transparent 60%),
-    radial-gradient(circle at 100% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 0% 100%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+    radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 100% 50%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
 }
 
 /* Glassmorphism Classes Dark */
@@ -89,7 +89,7 @@ html.light .bg-stadium-mesh {
 }
 
 html.light .gradient-text-gold {
-  background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #78350F 100%);
+  background: linear-gradient(135deg, #92400E 0%, #B45309 50%, #78350F 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

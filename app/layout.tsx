@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ToastProvider from "@/components/ToastProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 
@@ -14,8 +14,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "NBA Predictor 2025 - Ultimate Sports Experience",
-  description: "Dự đoán kết quả NBA Regular Season và Playoffs đẳng cấp hàng đầu",
+  title: "NBA Predictor 2026-27 - Ultimate Sports Experience",
+  description: "Dự đoán kết quả NBA Regular Season và Playoffs 2026-27 đẳng cấp hàng đầu",
 };
 
 export default function RootLayout({
@@ -31,22 +31,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
-            <Toaster
-              position="bottom-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#0f172a',
-                  color: '#fff',
-                  border: '1px solid rgba(245, 158, 11, 0.4)',
-                  borderRadius: '16px',
-                  padding: '12px 18px',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                },
-              }}
-            />
+            <ToastProvider />
           </LanguageProvider>
         </ThemeProvider>
       </body>
