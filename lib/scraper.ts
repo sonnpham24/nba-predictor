@@ -4,12 +4,15 @@ import { logSystemEvent } from '@/lib/logger';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
-const EASTERN_TEAMS_SET = new Set([
-  'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WAS'
+// Official ESPN IDs for Eastern Conference teams
+const EASTERN_TEAM_IDS = new Set([1, 2, 4, 5, 8, 11, 14, 15, 17, 18, 19, 20, 27, 28, 30]);
+
+const EASTERN_ABBREVS = new Set([
+  'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 'MIA', 'MIL', 'NY', 'NYK', 'ORL', 'PHI', 'TOR', 'WSH', 'WAS'
 ]);
 
-export function getNormalizedConference(abbrev: string): 'Eastern Conference' | 'Western Conference' {
-  if (EASTERN_TEAMS_SET.has(abbrev.toUpperCase())) {
+export function getNormalizedConference(teamId: number, abbrev: string): 'Eastern Conference' | 'Western Conference' {
+  if (EASTERN_TEAM_IDS.has(teamId) || EASTERN_ABBREVS.has(abbrev.toUpperCase())) {
     return 'Eastern Conference';
   }
   return 'Western Conference';
@@ -31,7 +34,7 @@ export async function fetchNbaTeams() {
       const abbreviation = t.abbreviation || t.shortDisplayName || name.substring(0, 3).toUpperCase();
       const logo = t.logos?.[0]?.href || `https://a.espncdn.com/i/teamlogos/nba/500/${abbreviation.toLowerCase()}.png`;
       const color = t.color ? `#${t.color}` : '#000000';
-      const conference = getNormalizedConference(abbreviation);
+      const conference = getNormalizedConference(teamId, abbreviation);
 
       const existing = await prisma.team.findUnique({ where: { id: teamId } });
 
@@ -73,17 +76,35 @@ export async function scrapeTeamRoster(teamId: number) {
     if (!res.ok) throw new Error(`ESPN Roster API returned status ${res.status}`);
 
     const data = await res.json();
-    const athletes = (data.athletes || []).map((a: any, idx: number) => ({
-      id: a.id,
-      fullName: a.fullName,
-      displayName: a.displayName,
-      jersey: a.jersey || 'N/A',
-      position: a.position?.abbreviation || 'N/A',
-      height: a.displayHeight || 'N/A',
-      weight: a.displayWeight || 'N/A',
-      headshot: a.headshot?.href || null,
-      starter: idx < 5 || a.starter === true, // Mark top 5 as Starters
-    }));
+    const rawAthletes = data.athletes || [];
+
+    // Smart Starting 5 Selection: Select PG, SG, SF, PF, C positions first if available
+    const positionStarters = new Set<string>();
+
+    const athletes = rawAthletes.map((a: any, idx: number) => {
+      const pos = a.position?.abbreviation || 'N/A';
+      let isStarter = a.starter === true;
+
+      // Smart position-based starter allocation if not explicitly marked
+      if (!isStarter && !positionStarters.has(pos) && positionStarters.size < 5 && ['PG', 'SG', 'SF', 'PF', 'C', 'G', 'F'].includes(pos)) {
+        positionStarters.add(pos);
+        isStarter = true;
+      } else if (idx < 5 && positionStarters.size < 5) {
+        isStarter = true;
+      }
+
+      return {
+        id: a.id,
+        fullName: a.fullName,
+        displayName: a.displayName,
+        jersey: a.jersey || 'N/A',
+        position: pos,
+        height: a.displayHeight || 'N/A',
+        weight: a.displayWeight || 'N/A',
+        headshot: a.headshot?.href || null,
+        starter: isStarter,
+      };
+    });
 
     const rosterData = {
       scrapedAt: new Date().toISOString(),
@@ -174,28 +195,28 @@ export async function fetchUpcomingSchedule(daysAhead = 7) {
         await prisma.team.upsert({
           where: { id: teamAId },
           update: {
-            conference: getNormalizedConference(abbrevA),
+            conference: getNormalizedConference(teamAId, abbrevA),
           },
           create: {
             id: teamAId,
             name: homeComp.team.displayName || homeComp.team.name,
             abbreviation: abbrevA,
             logo: homeComp.team.logo || `https://a.espncdn.com/i/teamlogos/nba/500/${abbrevA.toLowerCase()}.png`,
-            conference: getNormalizedConference(abbrevA),
+            conference: getNormalizedConference(teamAId, abbrevA),
           },
         });
 
         await prisma.team.upsert({
           where: { id: teamBId },
           update: {
-            conference: getNormalizedConference(abbrevB),
+            conference: getNormalizedConference(teamBId, abbrevB),
           },
           create: {
             id: teamBId,
             name: awayComp.team.displayName || awayComp.team.name,
             abbreviation: abbrevB,
             logo: awayComp.team.logo || `https://a.espncdn.com/i/teamlogos/nba/500/${abbrevB.toLowerCase()}.png`,
-            conference: getNormalizedConference(abbrevB),
+            conference: getNormalizedConference(teamBId, abbrevB),
           },
         });
 
@@ -209,7 +230,7 @@ export async function fetchUpcomingSchedule(daysAhead = 7) {
         else if (statusState === 'post') status = 'FINISHED';
 
         const scoreA = homeComp.score ? parseInt(homeComp.score) : null;
-        const scoreB = awayComp.score ? parseInt(awayComp.score) : null;
+        const scoreB = homeComp.score ? parseInt(awayComp.score) : null;
         const clock = competition.status?.displayClock || null;
         const period = competition.status?.period || null;
 
