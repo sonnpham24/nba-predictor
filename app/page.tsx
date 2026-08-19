@@ -1,20 +1,77 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
 
-export default function HomePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/regular-season');
-  }, [router]);
+export default function LandingPage() {
+  const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-200">
-      <div className="flex items-center space-x-3">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
-        <p className="text-lg font-semibold">Đang chuyển hướng đến NBA Regular Season Predictor...</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+      {/* Hero Section */}
+      <div className="text-center max-w-4xl mx-auto space-y-8">
+        <div className="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 px-4 py-1.5 rounded-full text-xs font-black text-amber-400 uppercase tracking-widest animate-pulse-glow">
+          <span>🏀 NBA 2025 PREDICTOR PLATFORM</span>
+        </div>
+
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-tight uppercase">
+          <span className="gradient-text-gold">{t.landingTitle}</span>
+        </h1>
+
+        <p className="text-slate-400 text-base sm:text-xl max-w-2xl mx-auto font-medium leading-relaxed">
+          {t.landingSub}
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <Link
+            href="/auth"
+            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-sm uppercase tracking-wider shadow-2xl shadow-amber-500/25 hover:scale-105 transition duration-300"
+          >
+            {t.landingBtnStart} →
+          </Link>
+          <Link
+            href="/auth"
+            className="w-full sm:w-auto px-8 py-4 bg-slate-900/80 hover:bg-slate-800 text-white font-extrabold rounded-2xl text-sm border border-slate-700 shadow-lg hover:scale-105 transition duration-300"
+          >
+            {t.landingBtnSignIn}
+          </Link>
+        </div>
+      </div>
+
+      {/* Feature Grid Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24">
+        {/* Feature 1 */}
+        <div className="glass-card p-8 rounded-3xl border border-white/10 hover:border-amber-500/40 transition duration-300 flex flex-col justify-between">
+          <div>
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl mb-6">
+              🗓️
+            </div>
+            <h3 className="text-xl font-black text-white mb-3">{t.landingFeat1Title}</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">{t.landingFeat1Desc}</p>
+          </div>
+        </div>
+
+        {/* Feature 2 */}
+        <div className="glass-card p-8 rounded-3xl border border-white/10 hover:border-amber-500/40 transition duration-300 flex flex-col justify-between">
+          <div>
+            <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-3xl mb-6">
+              📊
+            </div>
+            <h3 className="text-xl font-black text-white mb-3">{t.landingFeat2Title}</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">{t.landingFeat2Desc}</p>
+          </div>
+        </div>
+
+        {/* Feature 3 */}
+        <div className="glass-card p-8 rounded-3xl border border-white/10 hover:border-amber-500/40 transition duration-300 flex flex-col justify-between">
+          <div>
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl mb-6">
+              🏆
+            </div>
+            <h3 className="text-xl font-black text-white mb-3">{t.landingFeat3Title}</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">{t.landingFeat3Desc}</p>
+          </div>
+        </div>
       </div>
     </div>
   );

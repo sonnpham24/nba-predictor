@@ -3,41 +3,92 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const predictions = await prisma.regularPrediction.findMany({
-      include: {
-        user: { select: { id: true, username: true } },
-        matchup: { select: { status: true, actualWinnerId: true } },
-      },
-    });
+    const [allUsers, regPredictions, playoffPredictions] = await Promise.all([
+      prisma.user.findMany({ select: { id: true, username: true } }),
+      prisma.regularPrediction.findMany({
+        include: {
+          user: { select: { id: true, username: true } },
+          matchup: { select: { status: true, actualWinnerId: true } },
+        },
+      }),
+      prisma.prediction.findMany({
+        include: {
+          user: { select: { id: true, username: true } },
+          matchup: { select: { actualWinner: true, actualScore: true } },
+        },
+      }),
+    ]);
 
-    const userScores: { [userId: number]: { id: number; username: string; score: number; totalPredictions: number; correctPredictions: number } } = {};
+    const userStats: {
+      [userId: number]: {
+        id: number;
+        username: string;
+        regularScore: number;
+        playoffScore: number;
+        totalScore: number;
+        totalPredictions: number;
+        correctPredictions: number;
+      };
+    } = {};
 
-    for (const p of predictions) {
-      const { user, matchup, predictedWinnerId } = p;
-      if (!userScores[user.id]) {
-        userScores[user.id] = {
-          id: user.id,
-          username: user.username,
-          score: 0,
-          totalPredictions: 0,
-          correctPredictions: 0,
-        };
-      }
+    for (const u of allUsers) {
+      userStats[u.id] = {
+        id: u.id,
+        username: u.username,
+        regularScore: 0,
+        playoffScore: 0,
+        totalScore: 0,
+        totalPredictions: 0,
+        correctPredictions: 0,
+      };
+    }
 
-      userScores[user.id].totalPredictions += 1;
+    // Calculate Regular Season Points
+    for (const p of regPredictions) {
+      if (!userStats[p.userId]) continue;
+      userStats[p.userId].totalPredictions += 1;
 
-      if (matchup.status === 'FINISHED' && matchup.actualWinnerId !== null) {
-        if (predictedWinnerId === matchup.actualWinnerId) {
-          userScores[user.id].score += 1;
-          userScores[user.id].correctPredictions += 1;
+      if (p.matchup.status === 'FINISHED' && p.matchup.actualWinnerId !== null) {
+        if (p.predictedWinnerId === p.matchup.actualWinnerId) {
+          userStats[p.userId].regularScore += 1;
+          userStats[p.userId].correctPredictions += 1;
         }
       }
     }
 
-    const leaderboard = Object.values(userScores).sort((a, b) => b.score - a.score || b.correctPredictions - a.correctPredictions);
+    // Calculate Playoff Points
+    for (const p of playoffPredictions) {
+      if (!userStats[p.userId]) continue;
+      userStats[p.userId].totalPredictions += 1;
+
+      const { predictedWinner, predictedScore, matchup } = p;
+      if (matchup?.actualWinner && matchup?.actualScore) {
+        if (predictedWinner === matchup.actualWinner) {
+          userStats[p.userId].correctPredictions += 1;
+          const [predA, predB] = predictedScore.split('-').map(Number);
+          const [actA, actB] = matchup.actualScore.split('-').map(Number);
+          const predictedTotal = predA + predB;
+          const actualTotal = actA + actB;
+
+          if (predA === actA && predB === actB) {
+            userStats[p.userId].playoffScore += 3;
+          } else if (Math.abs(predictedTotal - actualTotal) === 1) {
+            userStats[p.userId].playoffScore += 2;
+          } else {
+            userStats[p.userId].playoffScore += 1;
+          }
+        }
+      }
+    }
+
+    // Sum Total Score
+    const leaderboard = Object.values(userStats).map((u) => ({
+      ...u,
+      totalScore: u.regularScore + u.playoffScore,
+    })).sort((a, b) => b.totalScore - a.totalScore || b.correctPredictions - a.correctPredictions);
 
     return NextResponse.json(leaderboard);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Lỗi server' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 });
   }
 }
