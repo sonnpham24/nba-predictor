@@ -4,16 +4,30 @@ import prisma from '@/lib/prisma';
 export async function GET() {
   try {
     const [allUsers, regPredictions, playoffPredictions] = await Promise.all([
-      prisma.user.findMany({ select: { id: true, username: true } }),
+      prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatar: true,
+          isAdmin: true,
+          favoriteTeam: {
+            select: {
+              id: true,
+              name: true,
+              abbreviation: true,
+              logo: true,
+            },
+          },
+        },
+      }),
       prisma.regularPrediction.findMany({
         include: {
-          user: { select: { id: true, username: true } },
           matchup: { select: { status: true, actualWinnerId: true } },
         },
       }),
       prisma.prediction.findMany({
         include: {
-          user: { select: { id: true, username: true } },
           matchup: { select: { actualWinner: true, actualScore: true } },
         },
       }),
@@ -23,6 +37,10 @@ export async function GET() {
       [userId: number]: {
         id: number;
         username: string;
+        displayName?: string | null;
+        avatar?: string | null;
+        isAdmin: boolean;
+        favoriteTeam?: any;
         regularScore: number;
         playoffScore: number;
         totalScore: number;
@@ -35,6 +53,10 @@ export async function GET() {
       userStats[u.id] = {
         id: u.id,
         username: u.username,
+        displayName: u.displayName,
+        avatar: u.avatar,
+        isAdmin: u.isAdmin,
+        favoriteTeam: u.favoriteTeam,
         regularScore: 0,
         playoffScore: 0,
         totalScore: 0,
@@ -82,10 +104,12 @@ export async function GET() {
     }
 
     // Sum Total Score
-    const leaderboard = Object.values(userStats).map((u) => ({
-      ...u,
-      totalScore: u.regularScore + u.playoffScore,
-    })).sort((a, b) => b.totalScore - a.totalScore || b.correctPredictions - a.correctPredictions);
+    const leaderboard = Object.values(userStats)
+      .map((u) => ({
+        ...u,
+        totalScore: u.regularScore + u.playoffScore,
+      }))
+      .sort((a, b) => b.totalScore - a.totalScore || b.correctPredictions - a.correctPredictions);
 
     return NextResponse.json(leaderboard);
   } catch (err: any) {

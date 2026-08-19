@@ -12,15 +12,25 @@ export default function Navbar() {
   const router = useRouter();
   const { t, locale, setLocale } = useLanguage();
   const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = useState<{ username: string; isAdmin: boolean } | null>(null);
+  const [user, setUser] = useState<{ id: number; username: string; displayName?: string; avatar?: string; isAdmin: boolean } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.user) setUser(data.user);
-        else setUser(null);
+        if (data?.user) {
+          // Fetch full user profile
+          fetch('/api/me/profile')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((prof) => {
+              if (prof) setUser({ ...data.user, ...prof });
+              else setUser(data.user);
+            })
+            .catch(() => setUser(data.user));
+        } else {
+          setUser(null);
+        }
       })
       .catch(() => setUser(null));
   }, [pathname]);
@@ -48,6 +58,7 @@ export default function Navbar() {
     { href: '/standings', label: t.navStandings },
     { href: '/teams', label: t.navTeams },
     { href: '/stats', label: t.navLeaderboard },
+    { href: '/settings', label: t.navSettings },
   ];
 
   if (user?.isAdmin) {
@@ -97,19 +108,39 @@ export default function Navbar() {
             {/* User Account / Auth Buttons */}
             {user ? (
               <div className="flex items-center space-x-3 bg-slate-900/80 dark:bg-slate-900/80 light:bg-white border border-slate-800 light:border-slate-300 p-1.5 pl-3 rounded-2xl shadow-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-xs">
-                    {user.username.substring(0, 2).toUpperCase()}
-                  </div>
+                <Link href="/settings" className="flex items-center space-x-2 group">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="w-8 h-8 rounded-xl object-cover border border-amber-500/40 group-hover:scale-105 transition"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-xs group-hover:scale-105 transition">
+                      {user.username.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex flex-col">
-                    <span className="text-xs font-extrabold text-white dark:text-white light:text-slate-900 whitespace-nowrap">
-                      {user.username}
-                    </span>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-xs font-extrabold text-white dark:text-white light:text-slate-900 whitespace-nowrap group-hover:text-amber-400 transition">
+                        {user.displayName || user.username}
+                      </span>
+                      {user.isAdmin && <span title="Verified Admin" className="text-[10px]">☑️</span>}
+                    </div>
                     {user.isAdmin && (
-                      <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">PRO ADMIN</span>
+                      <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest -mt-0.5">PRO ADMIN</span>
                     )}
                   </div>
-                </div>
+                </Link>
+
+                <Link
+                  href="/settings"
+                  className="p-1.5 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-xl transition text-xs"
+                  title="Account Settings"
+                >
+                  ⚙️
+                </Link>
+
                 <button
                   onClick={handleLogout}
                   className="px-3 py-1.5 text-xs font-extrabold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl transition whitespace-nowrap"
@@ -211,6 +242,17 @@ export default function Navbar() {
                 }`}
               >
                 <span>{t.navLeaderboard}</span>
+              </Link>
+
+              <Link
+                href="/settings"
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
+                  pathname === '/settings'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
+                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
+                }`}
+              >
+                <span>{t.navSettings}</span>
               </Link>
 
               {user.isAdmin && (
