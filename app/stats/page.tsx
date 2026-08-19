@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import VerifiedBadge from '@/components/VerifiedBadge';
 import UserProfileModal from '@/components/UserProfileModal';
 
 export default function StatsPage() {
@@ -65,12 +66,8 @@ export default function StatsPage() {
           {userObj.displayName || userObj.username}
         </span>
 
-        {/* Admin Verify Checkmark */}
-        {userObj.isAdmin && (
-          <span className="text-blue-400 text-xs flex-shrink-0" title="Verified Admin">
-            ☑️
-          </span>
-        )}
+        {/* Sleek SVG Verified Admin Checkmark */}
+        {userObj.isAdmin && <VerifiedBadge />}
       </div>
     );
   };

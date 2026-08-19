@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useTheme } from '@/context/ThemeContext';
+import VerifiedBadge from '@/components/VerifiedBadge';
 import toast from 'react-hot-toast';
 
 export default function Navbar() {
@@ -20,7 +21,6 @@ export default function Navbar() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.user) {
-          // Fetch full user profile
           fetch('/api/me/profile')
             .then((r) => (r.ok ? r.json() : null))
             .then((prof) => {
@@ -58,7 +58,6 @@ export default function Navbar() {
     { href: '/standings', label: t.navStandings },
     { href: '/teams', label: t.navTeams },
     { href: '/stats', label: t.navLeaderboard },
-    { href: '/settings', label: t.navSettings },
   ];
 
   if (user?.isAdmin) {
@@ -108,37 +107,30 @@ export default function Navbar() {
             {/* User Account / Auth Buttons */}
             {user ? (
               <div className="flex items-center space-x-3 bg-slate-900/80 dark:bg-slate-900/80 light:bg-white border border-slate-800 light:border-slate-300 p-1.5 pl-3 rounded-2xl shadow-sm">
-                <Link href="/settings" className="flex items-center space-x-2 group">
+                {/* Clicking Avatar or Username links directly to /settings */}
+                <Link href="/settings" title="Click to open Settings" className="flex items-center space-x-2.5 group">
                   {user.avatar ? (
                     <img
                       src={user.avatar}
                       alt={user.username}
-                      className="w-8 h-8 rounded-xl object-cover border border-amber-500/40 group-hover:scale-105 transition"
+                      className="w-9 h-9 rounded-xl object-cover border border-amber-500/50 group-hover:scale-105 transition shadow-sm"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-xs group-hover:scale-105 transition">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 font-black text-xs flex items-center justify-center border border-amber-400 group-hover:scale-105 transition shadow-sm">
                       {user.username.substring(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div className="flex flex-col">
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-1.5">
                       <span className="text-xs font-extrabold text-white dark:text-white light:text-slate-900 whitespace-nowrap group-hover:text-amber-400 transition">
                         {user.displayName || user.username}
                       </span>
-                      {user.isAdmin && <span title="Verified Admin" className="text-[10px]">☑️</span>}
+                      {user.isAdmin && <VerifiedBadge />}
                     </div>
                     {user.isAdmin && (
                       <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest -mt-0.5">PRO ADMIN</span>
                     )}
                   </div>
-                </Link>
-
-                <Link
-                  href="/settings"
-                  className="p-1.5 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-xl transition text-xs"
-                  title="Account Settings"
-                >
-                  ⚙️
                 </Link>
 
                 <button
@@ -244,17 +236,6 @@ export default function Navbar() {
                 <span>{t.navLeaderboard}</span>
               </Link>
 
-              <Link
-                href="/settings"
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
-                  pathname === '/settings'
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
-                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
-                }`}
-              >
-                <span>{t.navSettings}</span>
-              </Link>
-
               {user.isAdmin && (
                 <Link
                   href="/admin"
@@ -287,7 +268,9 @@ export default function Navbar() {
           ))}
 
           <div className="pt-3 border-t border-slate-800 flex items-center justify-between px-2">
-            <span className="text-xs font-bold text-amber-400">👤 {user.username}</span>
+            <Link href="/settings" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-amber-400">
+              👤 {user.username} (Settings)
+            </Link>
             <button
               onClick={handleLogout}
               className="px-3 py-1.5 text-xs font-bold text-red-400 bg-red-500/10 rounded-lg"

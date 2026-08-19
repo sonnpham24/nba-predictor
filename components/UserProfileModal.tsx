@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface UserProfileModalProps {
   userId: number | null;
@@ -63,8 +64,8 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
                   </div>
                 )}
                 {userProfile.isAdmin && (
-                  <span className="absolute bottom-0 right-0 bg-blue-600 text-white text-xs font-black p-1 rounded-full shadow-lg border-2 border-slate-950" title="Verified Admin">
-                    ☑️
+                  <span className="absolute bottom-0 right-0" title="Verified Admin">
+                    <VerifiedBadge />
                   </span>
                 )}
               </div>
@@ -74,11 +75,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
                   <h3 className="text-2xl font-black text-white leading-normal break-words">
                     {userProfile.displayName || userProfile.username}
                   </h3>
-                  {userProfile.isAdmin && (
-                    <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
-                      ☑️ {t.verifiedAdminCheckmark}
-                    </span>
-                  )}
+                  {userProfile.isAdmin && <VerifiedBadge showText />}
                 </div>
                 <span className="text-xs text-slate-400 font-mono">@{userProfile.username}</span>
               </div>
