@@ -31,12 +31,9 @@ export default function AdminPage() {
   const [customStartTime, setCustomStartTime] = useState('');
   const [creatingCustom, setCreatingCustom] = useState(false);
 
-  // Custom Settle Form States
-  const [settleMatchupId, setSettleMatchupId] = useState('');
-  const [settleScoreA, setSettleScoreA] = useState('');
-  const [settleScoreB, setSettleScoreB] = useState('');
-  const [settleWinnerType, setSettleWinnerType] = useState<'teamA' | 'teamB'>('teamA');
-  const [settlingCustom, setSettlingCustom] = useState(false);
+  // Custom Settle Inline States
+  const [settleScores, setSettleScores] = useState<{ [matchupId: number]: { scoreA: string; scoreB: string; winnerType: 'teamA' | 'teamB' } }>({});
+  const [settlingMatchupId, setSettlingMatchupId] = useState<number | null>(null);
 
   // Admin Score Editor State
   const [scoreAdjustments, setScoreAdjustments] = useState<{ [userId: number]: number }>({});
@@ -69,7 +66,22 @@ export default function AdminPage() {
       ]);
 
       if (tRes.ok) setTeams(await tRes.json());
-      if (mRes.ok) setMatchups(await mRes.json());
+      if (mRes.ok) {
+        const matchupData = await mRes.json();
+        setMatchups(matchupData);
+
+        const initSettleState: { [mId: number]: { scoreA: string; scoreB: string; winnerType: 'teamA' | 'teamB' } } = {};
+        matchupData.forEach((m: any) => {
+          if (m.isCustom) {
+            initSettleState[m.id] = {
+              scoreA: m.scoreA !== null ? String(m.scoreA) : '',
+              scoreB: m.scoreB !== null ? String(m.scoreB) : '',
+              winnerType: 'teamA',
+            };
+          }
+        });
+        setSettleScores(initSettleState);
+      }
       if (uRes.ok) {
         const userData = await uRes.json();
         setUsers(userData);
@@ -175,23 +187,23 @@ export default function AdminPage() {
     }
   };
 
-  const handleSettleCustomMatchup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!settleMatchupId) {
-      toast.error(locale === 'en' ? 'Please select a custom matchup to settle' : 'Vui lòng chọn trận đấu tùy chỉnh để nhập kết quả');
+  const handleSettleCustomInline = async (matchupId: number) => {
+    const settleData = settleScores[matchupId];
+    if (!settleData || !settleData.scoreA || !settleData.scoreB) {
+      toast.error(locale === 'en' ? 'Please enter final scores for both teams' : 'Vui lòng nhập đầy đủ tỉ số của 2 đội');
       return;
     }
 
-    setSettlingCustom(true);
+    setSettlingMatchupId(matchupId);
     try {
       const res = await fetch('/api/admin/regular/settle-custom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          matchupId: settleMatchupId,
-          scoreA: settleScoreA,
-          scoreB: settleScoreB,
-          winnerType: settleWinnerType,
+          matchupId,
+          scoreA: settleData.scoreA,
+          scoreB: settleData.scoreB,
+          winnerType: settleData.winnerType,
         }),
       });
 
@@ -199,14 +211,11 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.error || 'Settle failed');
 
       toast.success(data.message || '🏁 Settled matchup & points distributed!');
-      setSettleMatchupId('');
-      setSettleScoreA('');
-      setSettleScoreB('');
       loadData();
     } catch (err: any) {
       toast.error(err.message);
     } finally {
-      setSettlingCustom(false);
+      setSettlingMatchupId(null);
     }
   };
 
@@ -449,7 +458,7 @@ export default function AdminPage() {
       </div>
 
       {/* Sub Tabs Bar */}
-      <div className="flex overflow-x-auto space-x-2 border-b border-slate-800 pb-3 mb-8 scrollbar-none">
+      <div className="flex overflow-x-auto space-x-2 border-b border-slate-800 pb-3 mb-8 pl-2 scrollbar-none">
         {[
           { id: 'teams', label: locale === 'en' ? '🏀 Manage 30 NBA Teams' : '🏀 Quản Lý 30 Đội Bóng' },
           { id: 'custom', label: locale === 'en' ? '➕ Create Custom Matchup' : '➕ Tự Tạo Matchup' },
@@ -608,9 +617,9 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 2: CREATE CUSTOM MATCHUP */}
+      {/* TAB 2: CREATE & SETTLE CUSTOM MATCHUPS */}
       {activeTab === 'custom' && (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {/* Create Custom Form */}
           <form onSubmit={handleCreateCustomMatchup} className="glass-card p-8 rounded-3xl border border-amber-500/40 shadow-2xl space-y-6">
             <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
@@ -724,103 +733,235 @@ export default function AdminPage() {
             </button>
           </form>
 
-          {/* Settle Custom Matchups Form */}
-          <form onSubmit={handleSettleCustomMatchup} className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
+          {/* List of Created Custom Matchups */}
+          <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
+            <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
+              📜 CREATED CUSTOM MATCHUPS LIST
+            </h2>
+            <p className="text-xs text-slate-400 leading-normal">
+              {locale === 'en'
+                ? 'Overview of all custom matchups created by Admin.'
+                : 'Danh sách tổng hợp tất cả các trận đấu tùy chỉnh do Admin tự tạo.'}
+            </p>
+
+            {customMatchupsList.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-xs font-semibold">
+                No custom matchups created yet.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="bg-slate-950/80 text-xs font-black text-slate-400 border-b border-slate-800">
+                    <tr>
+                      <th className="p-3">ID</th>
+                      <th className="p-3">Matchup</th>
+                      <th className="p-3">Start Time (GMT+7)</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Result</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+                    {customMatchupsList.map((m) => {
+                      const nameA = m.teamA ? m.teamA.name : m.customTeamA;
+                      const nameB = m.teamB ? m.teamB.name : m.customTeamB;
+                      return (
+                        <tr key={m.id}>
+                          <td className="p-3 font-bold text-slate-500">#{m.id}</td>
+                          <td className="p-3 font-bold text-white">
+                            {nameA} vs {nameB}
+                          </td>
+                          <td className="p-3 text-slate-300">
+                            {new Date(m.startTime).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
+                          </td>
+                          <td className="p-3">
+                            {m.isSettled ? (
+                              <span className="text-emerald-400 font-bold">FINISHED</span>
+                            ) : (
+                              <span className="text-amber-400 font-bold">SCHEDULED</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-amber-400 font-bold">
+                            {m.actualScore || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Settle Custom Matchups Inline Section */}
+          <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
             <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
               {t.settleCustomTitle}
             </h2>
             <p className="text-xs text-slate-400 leading-normal">
               {locale === 'en'
-                ? 'Input final score & select winner for custom games. +1 point will be AUTOMATICALLY distributed to correct predictors.'
-                : 'Nhập tỉ số thực tế & chọn Đội Thắng. Hệ thống TỰ ĐỘNG PHÂN +1 ĐIỂM cho tất cả người đoán đúng.'}
+                ? 'Input final score & select winner for custom games past their start time. +1 point will be AUTOMATICALLY distributed.'
+                : 'Chỉ cho phép nhập điểm & Settle đối với các trận đấu ĐÃ QUÁ GIỜ BẮT ĐẦU. Trận chưa tới giờ sẽ bị khóa.'}
             </p>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase mb-2">Select Unsettled Custom Matchup</label>
-              <select
-                value={settleMatchupId}
-                onChange={(e) => setSettleMatchupId(e.target.value)}
-                className="w-full glass-input p-3.5 rounded-2xl text-sm font-bold text-amber-400"
-              >
-                <option value="" className="bg-slate-900">-- Select custom matchup to settle --</option>
+            {customMatchupsList.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-xs font-semibold">
+                No custom matchups available to settle.
+              </div>
+            ) : (
+              <div className="space-y-6">
                 {customMatchupsList.map((m) => {
                   const nameA = m.teamA ? m.teamA.name : m.customTeamA;
                   const nameB = m.teamB ? m.teamB.name : m.customTeamB;
+                  const now = new Date();
+                  const hasStarted = now >= new Date(m.startTime);
+                  const st = settleScores[m.id] || { scoreA: '', scoreB: '', winnerType: 'teamA' };
+
                   return (
-                    <option key={m.id} value={m.id} className="bg-slate-900">
-                      #{m.id} - {nameA} vs {nameB} ({new Date(m.startTime).toLocaleDateString()}) [{m.isSettled ? 'FINISHED' : 'OPEN/LOCKED'}]
-                    </option>
+                    <div
+                      key={m.id}
+                      className={`p-6 rounded-2xl border transition space-y-4 ${
+                        m.isSettled
+                          ? 'bg-emerald-950/20 border-emerald-500/40'
+                          : hasStarted
+                          ? 'bg-amber-950/20 border-amber-500/40'
+                          : 'bg-slate-950/80 border-slate-800 opacity-70'
+                      }`}
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                        <div>
+                          <span className="text-xs font-mono text-slate-400">Match #{m.id}</span>
+                          <h3 className="text-base font-black text-white">
+                            {nameA} vs {nameB}
+                          </h3>
+                        </div>
+
+                        <div>
+                          {m.isSettled ? (
+                            <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-xl text-xs font-black uppercase">
+                              ✅ SETTLED ({m.actualScore}, Winner: {m.customWinner})
+                            </span>
+                          ) : hasStarted ? (
+                            <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1 rounded-xl text-xs font-black uppercase animate-pulse">
+                              ⚡ MATCH STARTED - READY TO SETTLE
+                            </span>
+                          ) : (
+                            <span className="bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1 rounded-xl text-xs font-bold uppercase">
+                              ⏳ NOT STARTED YET (Starts at {new Date(m.startTime).toLocaleTimeString()})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Score Input Form for Started & Unsettled Matches */}
+                      {!m.isSettled && (
+                        <div className="space-y-4 pt-2">
+                          {!hasStarted && (
+                            <p className="text-xs text-amber-400 font-semibold italic">
+                              ⚠️ Trận đấu chưa tới giờ bắt đầu. Ô nhập tỉ số sẽ tự động mở khi qua thời gian khởi tạo ({new Date(m.startTime).toLocaleString()}).
+                            </p>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                                Score {nameA}
+                              </label>
+                              <input
+                                type="number"
+                                disabled={!hasStarted}
+                                value={st.scoreA}
+                                onChange={(e) =>
+                                  setSettleScores({
+                                    ...settleScores,
+                                    [m.id]: { ...st, scoreA: e.target.value },
+                                  })
+                                }
+                                placeholder="108"
+                                className="w-full glass-input p-3 rounded-xl text-xs font-bold text-amber-400 disabled:opacity-40"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                                Score {nameB}
+                              </label>
+                              <input
+                                type="number"
+                                disabled={!hasStarted}
+                                value={st.scoreB}
+                                onChange={(e) =>
+                                  setSettleScores({
+                                    ...settleScores,
+                                    [m.id]: { ...st, scoreB: e.target.value },
+                                  })
+                                }
+                                placeholder="102"
+                                className="w-full glass-input p-3 rounded-xl text-xs font-bold text-amber-400 disabled:opacity-40"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                                Winner Selection
+                              </label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  type="button"
+                                  disabled={!hasStarted}
+                                  onClick={() =>
+                                    setSettleScores({
+                                      ...settleScores,
+                                      [m.id]: { ...st, winnerType: 'teamA' },
+                                    })
+                                  }
+                                  className={`p-2.5 rounded-xl border text-[11px] font-extrabold uppercase transition ${
+                                    st.winnerType === 'teamA'
+                                      ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                                      : 'border-slate-800 text-slate-400'
+                                  } disabled:opacity-40`}
+                                >
+                                  👑 {nameA}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  disabled={!hasStarted}
+                                  onClick={() =>
+                                    setSettleScores({
+                                      ...settleScores,
+                                      [m.id]: { ...st, winnerType: 'teamB' },
+                                    })
+                                  }
+                                  className={`p-2.5 rounded-xl border text-[11px] font-extrabold uppercase transition ${
+                                    st.winnerType === 'teamB'
+                                      ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                                      : 'border-slate-800 text-slate-400'
+                                  } disabled:opacity-40`}
+                                >
+                                  👑 {nameB}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={!hasStarted || settlingMatchupId === m.id}
+                            onClick={() => handleSettleCustomInline(m.id)}
+                            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 text-white font-black rounded-xl text-xs uppercase shadow transition"
+                          >
+                            {settlingMatchupId === m.id
+                              ? 'SETTLING...'
+                              : '🏁 SETTLE MATCHUP & AUTO-DISTRIBUTE +1 POINT →'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
-              </select>
-            </div>
-
-            {settleMatchupId && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Score Team A</label>
-                    <input
-                      type="number"
-                      required
-                      value={settleScoreA}
-                      onChange={(e) => setSettleScoreA(e.target.value)}
-                      placeholder="108"
-                      className="w-full glass-input p-3 rounded-xl text-sm font-bold text-amber-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Score Team B</label>
-                    <input
-                      type="number"
-                      required
-                      value={settleScoreB}
-                      onChange={(e) => setSettleScoreB(e.target.value)}
-                      placeholder="102"
-                      className="w-full glass-input p-3 rounded-xl text-sm font-bold text-amber-400"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase mb-2">Select Winning Team</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setSettleWinnerType('teamA')}
-                      className={`p-3.5 rounded-2xl border text-xs font-black uppercase transition ${
-                        settleWinnerType === 'teamA'
-                          ? 'border-amber-500 bg-amber-500/20 text-amber-400 shadow-lg'
-                          : 'border-slate-800 text-slate-400 hover:bg-slate-900'
-                      }`}
-                    >
-                      👑 Team A Winner
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSettleWinnerType('teamB')}
-                      className={`p-3.5 rounded-2xl border text-xs font-black uppercase transition ${
-                        settleWinnerType === 'teamB'
-                          ? 'border-amber-500 bg-amber-500/20 text-amber-400 shadow-lg'
-                          : 'border-slate-800 text-slate-400 hover:bg-slate-900'
-                      }`}
-                    >
-                      👑 Team B Winner
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={settlingCustom}
-                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs uppercase shadow-xl hover:scale-[1.01] transition duration-300"
-                >
-                  {settlingCustom ? 'SETTLING...' : '🏁 SETTLE MATCHUP & AUTO-DISTRIBUTE +1 POINT →'}
-                </button>
               </div>
             )}
-          </form>
+          </div>
         </div>
       )}
 

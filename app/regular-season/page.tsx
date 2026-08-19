@@ -15,8 +15,14 @@ export default function RegularSeasonPage() {
   const datesList = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
     return {
       daysAhead: i,
+      dateStr,
       formattedDate: d.toLocaleDateString(locale === 'en' ? 'en-US' : 'vi-VN', {
         weekday: 'short',
         month: 'short',
@@ -26,10 +32,10 @@ export default function RegularSeasonPage() {
     };
   });
 
-  const fetchMatchups = async (days: number) => {
+  const fetchMatchups = async (dateStr: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/regular/matchups?days=${days}`);
+      const res = await fetch(`/api/regular/matchups?date=${dateStr}`);
       if (!res.ok) throw new Error(locale === 'en' ? 'Failed to load matchups' : 'Lỗi tải danh sách trận đấu');
       const data = await res.json();
       setMatchups(data);
@@ -41,7 +47,8 @@ export default function RegularSeasonPage() {
   };
 
   useEffect(() => {
-    fetchMatchups(selectedDaysAhead);
+    const currentItem = datesList.find((d) => d.daysAhead === selectedDaysAhead) || datesList[0];
+    fetchMatchups(currentItem.dateStr);
   }, [selectedDaysAhead, locale]);
 
   const handlePredict = async (matchup: any, winnerObj: any) => {
@@ -64,7 +71,8 @@ export default function RegularSeasonPage() {
       if (!res.ok) throw new Error(data.error || (locale === 'en' ? 'Prediction failed' : 'Dự đoán thất bại'));
 
       toast.success(data.message || (locale === 'en' ? '✅ Prediction saved!' : '✅ Đã lưu dự đoán thành công!'));
-      fetchMatchups(selectedDaysAhead);
+      const currentItem = datesList.find((d) => d.daysAhead === selectedDaysAhead) || datesList[0];
+      fetchMatchups(currentItem.dateStr);
     } catch (err: any) {
       toast.error(err.message || 'Error');
     } finally {
