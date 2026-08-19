@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { registerSchema } from '@/lib/validations';
+import { sendOtpEmail } from '@/lib/mailer';
 
 export async function POST(request: Request) {
   try {
@@ -54,11 +55,20 @@ export async function POST(request: Request) {
       },
     });
 
+    // 5. Gửi Email thật chứa mã OTP qua Nodemailer Gmail SMTP
+    let emailSent = false;
+    if (email) {
+      const mailResult = await sendOtpEmail(email, otpCode, username);
+      emailSent = mailResult.success;
+    }
+
     return NextResponse.json({
-      message: 'Tạo tài khoản thành công! Vui lòng xác thực email.',
+      message: emailSent
+        ? 'Tạo tài khoản thành công! Mã OTP xác thực đã được gửi tới email của bạn.'
+        : 'Tạo tài khoản thành công! Vui lòng nhập mã OTP xác thực.',
       user: { id: newUser.id, username: newUser.username, email: newUser.email },
       requiresEmailVerification: true,
-      demoOtpCode: otpCode,
+      emailSent,
     });
   } catch (err: any) {
     console.error(err);

@@ -20,7 +20,6 @@ export default function AuthForm() {
   // Email verification step states
   const [verifyingEmailStep, setVerifyingEmailStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
-  const [demoOtpHint, setDemoOtpHint] = useState('');
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
@@ -61,8 +60,12 @@ export default function AuthForm() {
         router.refresh();
       } else {
         if (data.requiresEmailVerification) {
-          toast.success(locale === 'en' ? '📧 OTP Code sent! Please verify your email.' : '📧 Mã OTP đã gửi! Vui lòng xác thực email.');
-          setDemoOtpHint(data.demoOtpCode);
+          toast.success(
+            data.message ||
+              (locale === 'en'
+                ? '📧 OTP Verification code sent to your email!'
+                : '📧 Mã OTP xác thực đã được gửi tới email của bạn!')
+          );
           setVerifyingEmailStep(true);
         } else {
           toast.success(locale === 'en' ? '✅ Registration successful! Please sign in.' : '✅ Đăng ký thành công! Vui lòng đăng nhập.');
@@ -122,11 +125,9 @@ export default function AuthForm() {
         {/* OTP Email Verification Step */}
         {verifyingEmailStep ? (
           <form onSubmit={handleVerifyOtp} className="space-y-5 relative z-10">
-            {demoOtpHint && (
-              <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl text-center text-xs font-mono text-amber-400">
-                <span>🔑 OTP Verification Code: <strong>{demoOtpHint}</strong></span>
-              </div>
-            )}
+            <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl text-center text-xs font-semibold text-emerald-400 leading-normal">
+              📧 {locale === 'en' ? 'Check your email inbox for the 6-digit OTP code sent from vnbrayvn@gmail.com' : 'Vui lòng kiểm tra hòm thư Email của bạn để lấy mã OTP 6 chữ số được gửi từ vnbrayvn@gmail.com'}
+            </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-300 dark:text-slate-300 light:text-slate-700 uppercase tracking-wider mb-2 leading-normal">
