@@ -4,11 +4,13 @@ export const translations = {
   en: {
     // Navigation
     navBrand: 'NBA PREDICTOR',
-    navSub: '2025 SEASON HUB',
+    navSub: '2026-27 SEASON HUB',
     navRegular: '🏀 Regular Season',
+    navStandings: '📈 Standings 2026-27',
+    navTeams: '🏀 NBA Teams',
     navPlayoffs: '🏆 Playoffs',
     navPlayoffsLocked: 'Coming Soon',
-    navPlayoffsLockedTooltip: 'Playoffs haven\'t started yet!',
+    navPlayoffsLockedTooltip: 'Playoffs 2027 haven\'t started yet!',
     navLeaderboard: '📊 Leaderboard',
     navAdmin: '⚙️ Admin Panel',
     navLogin: 'Sign In',
@@ -16,19 +18,19 @@ export const translations = {
     proAdmin: 'PRO ADMIN',
 
     // Landing Page
-    landingTitle: 'THE ULTIMATE NBA PREDICTION PLATFORM',
-    landingSub: 'Predict daily NBA matchups, follow live game scores, rate community odds, and climb the global leaderboard.',
+    landingTitle: 'THE ULTIMATE NBA 2026-27 PREDICTION PLATFORM',
+    landingSub: 'Predict daily NBA matchups, follow live game scores, rate community odds, track 2026-27 standings, and climb the global leaderboard.',
     landingBtnStart: 'Get Started Free',
     landingBtnSignIn: 'Sign In to Play',
     landingFeat1Title: 'Live Regular Season Matchups',
-    landingFeat1Desc: 'Real-time scores, period clock tracking, and daily game schedule up to 7 days ahead.',
+    landingFeat1Desc: 'Real-time scores, period clock tracking, and daily game schedule for the 2026-27 season.',
     landingFeat2Title: 'Community Predictions & Odds',
     landingFeat2Desc: 'Vote for winning teams, view real-time community voting percentages, and compare odds.',
     landingFeat3Title: 'Automated Scoring & Leaderboard',
     landingFeat3Desc: 'Auto-settled predictions when games finish. Earn +1 point per correct pick and top the standings.',
 
     // Regular Season Page
-    regularTitle: 'NBA REGULAR SEASON PREDICTOR',
+    regularTitle: 'DỰ ĐOÁN NBA REGULAR SEASON 2026-27',
     regularSub: 'Predict winning teams, follow live game scores, and check community voting split.',
     today: 'Today',
     tomorrow: 'Tomorrow',
@@ -42,6 +44,25 @@ export const translations = {
     voted: 'Voted',
     details: 'View Match Details →',
     noGamesOnDate: 'No NBA matchups scheduled for this date.',
+
+    // Standings Page
+    standingsTitle: '📈 NBA 2026-27 CONFERENCE STANDINGS',
+    standingsSub: 'Real-time team standings for the 2026-27 season, split by Eastern & Western Conference.',
+    eastConference: '🌇 Eastern Conference',
+    westConference: '🌅 Western Conference',
+    win: 'W',
+    loss: 'L',
+    pct: 'PCT',
+    gb: 'GB',
+    home: 'HOME',
+    away: 'AWAY',
+    streak: 'STRK',
+
+    // Teams List Page
+    teamsTitle: '🏀 30 OFFICIAL NBA TEAMS',
+    teamsSub: 'Explore all 30 NBA teams, head coaches, conferences, and verified player rosters.',
+    searchTeamPlaceholder: 'Search team by name or abbreviation...',
+    allConferences: 'All Conferences',
 
     // Matchup Detail
     matchupDetailTitle: 'NBA Matchup Breakdown',
@@ -64,8 +85,8 @@ export const translations = {
     weight: 'Weight',
 
     // Leaderboard
-    leaderboardTitle: '📊 GLOBAL LEADERBOARD',
-    leaderboardSub: 'Honoring top predictors in NBA Predictor 2025 (Combined Total Score)',
+    leaderboardTitle: '📊 GLOBAL LEADERBOARD 2026-27',
+    leaderboardSub: 'Honoring top predictors in NBA Predictor 2026-27 (Combined Total Score)',
     totalScore: 'Total Score',
     regularPoints: 'Regular Pts',
     playoffPoints: 'Playoff Pts',
@@ -77,26 +98,37 @@ export const translations = {
     // Auth
     authSignInTitle: 'SIGN IN',
     authSignUpTitle: 'CREATE ACCOUNT',
-    authSignInSub: 'Welcome back to NBA Predictor Hub',
-    authSignUpSub: 'Join the NBA 2025 prediction community',
+    authSignInSub: 'Welcome back to NBA Predictor Hub 2026-27',
+    authSignUpSub: 'Join the NBA 2026-27 prediction community',
     usernameLabel: 'Username',
     usernamePlaceholder: 'Enter your username...',
+    emailLabel: 'Email Address (Unique)',
+    emailPlaceholder: 'name@example.com...',
     passwordLabel: 'Password',
     passwordPlaceholder: 'Enter your password...',
+    confirmPasswordLabel: 'Confirm Password',
+    confirmPasswordPlaceholder: 'Re-enter your password...',
     btnSignInAction: 'SIGN IN NOW →',
     btnSignUpAction: 'CONFIRM REGISTRATION →',
+    emailVerifyTitle: 'ENTER 6-DIGIT VERIFICATION CODE',
+    emailVerifySub: 'We sent a 6-digit code to',
+    btnVerifyAction: 'VERIFY & COMPLETE REGISTRATION →',
+    resendCode: 'Resend Code',
 
     // Footer
-    copyright: 'Copyright © NBA Predictor 2025 - All Rights Reserved.',
+    developerCredit: 'Developed & Designed by Son Pham (phamcongson297@gmail.com)',
+    copyright: 'Copyright © NBA Predictor 2026-27 - All Rights Reserved.',
   },
   vi: {
     // Navigation
     navBrand: 'NBA PREDICTOR',
-    navSub: '2025 SEASON HUB',
+    navSub: 'MÙA GIẢI 2026-27',
     navRegular: '🏀 Regular Season',
+    navStandings: '📈 BXH NBA 2026-27',
+    navTeams: '🏀 30 Đội Bóng',
     navPlayoffs: '🏆 Playoffs',
     navPlayoffsLocked: 'Sắp ra mắt',
-    navPlayoffsLockedTooltip: 'Chưa tới mùa giải Playoff!',
+    navPlayoffsLockedTooltip: 'Chưa tới mùa giải Playoff 2027!',
     navLeaderboard: '📊 Bảng Xếp Hạng',
     navAdmin: '⚙️ Admin Panel',
     navLogin: 'Đăng nhập',
@@ -104,19 +136,19 @@ export const translations = {
     proAdmin: 'PRO ADMIN',
 
     // Landing Page
-    landingTitle: 'NỀN TẢNG DỰ ĐOÁN KẾT QUẢ NBA HÀNG ĐẦU',
-    landingSub: 'Dự đoán kết quả từng trận đấu NBA, theo dõi tỉ số Live real-time, đánh giá tỷ lệ cộng đồng và vinh danh trên Bảng Xếp Hạng.',
+    landingTitle: 'NỀN TẢNG DỰ ĐOÁN NBA MÙA GIẢI 2026-27',
+    landingSub: 'Dự đoán kết quả từng trận đấu NBA 2026-27, theo dõi tỉ số Live real-time, đánh giá tỷ lệ cộng đồng, theo dõi BXH Standings và vinh danh trên Bảng Xếp Hạng.',
     landingBtnStart: 'Bắt Đầu Ngay (Miễn Phí)',
     landingBtnSignIn: 'Đăng Nhập Để Chơi',
     landingFeat1Title: 'Lịch Thi Đấu & Tỉ Số Live',
-    landingFeat1Desc: 'Tỉ số thực tế, đồng hồ thời gian còn lại, và lịch thi đấu chuẩn trong vòng 7 ngày.',
+    landingFeat1Desc: 'Tỉ số thực tế, đồng hồ thời gian còn lại, và lịch thi đấu mùa giải 2026-27.',
     landingFeat2Title: 'Dự Đoán & Tỷ Lệ Cộng Đồng',
     landingFeat2Desc: 'Bình chọn đội thắng, xem phần trăm tỷ lệ bình chọn của người chơi khác và so sánh.',
     landingFeat3Title: 'Tự Động Chấm Điểm & Vinh Danh',
     landingFeat3Desc: 'Tự động tính điểm +1 khi trận đấu kết thúc và cập nhật Bảng Xếp Hạng toàn cầu.',
 
     // Regular Season Page
-    regularTitle: 'DỰ ĐOÁN NBA REGULAR SEASON',
+    regularTitle: 'DỰ ĐOÁN NBA REGULAR SEASON 2026-27',
     regularSub: 'Bình chọn đội thắng, theo dõi tỉ số trực tiếp và tỉ lệ bình chọn cộng đồng.',
     today: 'Hôm nay',
     tomorrow: 'Ngày mai',
@@ -130,6 +162,25 @@ export const translations = {
     voted: 'Đã chọn',
     details: 'Xem Chi Tiết Matchup →',
     noGamesOnDate: 'Không có trận đấu NBA nào trong ngày này.',
+
+    // Standings Page
+    standingsTitle: '📈 BẢNG XẾP HẠNG THÀNH TÍCH NBA 2026-27',
+    standingsSub: 'Bảng xếp hạng thành tích các đội bóng NBA mùa giải 2026-27 theo Miền Đông và Miền Tây.',
+    eastConference: '<ctrl42> Miền Đông (Eastern Conference)',
+    westConference: '🌅 Miền Tây (Western Conference)',
+    win: 'Thắng',
+    loss: 'Thua',
+    pct: 'PCT',
+    gb: 'GB',
+    home: 'SÂN NHÀ',
+    away: 'SÂN KHÁCH',
+    streak: 'CHUỖI',
+
+    // Teams List Page
+    teamsTitle: '🏀 DANH SÁCH 30 ĐỘI BÓNG NBA CHÍNH THỨC',
+    teamsSub: 'Khám phá 30 đội bóng NBA, HLV trưởng, khu vực miền và danh sách cầu thủ (Roster).',
+    searchTeamPlaceholder: 'Tìm kiếm đội bóng theo tên hoặc tên viết tắt...',
+    allConferences: 'Tất cả các Miền',
 
     // Matchup Detail
     matchupDetailTitle: 'Chi Tiết Trận Đấu NBA',
@@ -152,8 +203,8 @@ export const translations = {
     weight: 'Cân nặng',
 
     // Leaderboard
-    leaderboardTitle: '📊 BẢNG XẾP HẠNG TOÀN CẦU',
-    leaderboardSub: 'Vinh danh cao thủ có Điểm Tổng cao nhất NBA Predictor 2025',
+    leaderboardTitle: '📊 BẢNG XẾP HẠNG TOÀN CẦU 2026-27',
+    leaderboardSub: 'Vinh danh cao thủ có Điểm Tổng cao nhất NBA Predictor 2026-27',
     totalScore: 'Điểm Tổng',
     regularPoints: 'Điểm Regular',
     playoffPoints: 'Điểm Playoff',
@@ -165,16 +216,25 @@ export const translations = {
     // Auth
     authSignInTitle: 'ĐĂNG NHẬP',
     authSignUpTitle: 'TẠO TÀI KHOẢN',
-    authSignInSub: 'Chào mừng bạn trở lại với NBA Predictor Hub',
-    authSignUpSub: 'Tham gia cộng đồng dự đoán kết quả NBA 2025',
+    authSignInSub: 'Chào mừng bạn trở lại với NBA Predictor Hub 2026-27',
+    authSignUpSub: 'Tham gia cộng đồng dự đoán kết quả NBA 2026-27',
     usernameLabel: 'Tên tài khoản (Username)',
     usernamePlaceholder: 'Nhập username của bạn...',
+    emailLabel: 'Địa chỉ Email (Mỗi email chỉ tạo 1 tài khoản)',
+    emailPlaceholder: 'name@example.com...',
     passwordLabel: 'Mật khẩu (Password)',
     passwordPlaceholder: 'Nhập mật khẩu...',
+    confirmPasswordLabel: 'Xác nhận Mật khẩu',
+    confirmPasswordPlaceholder: 'Nhập lại mật khẩu vừa đặt...',
     btnSignInAction: 'VÀO HỆ THỐNG →',
     btnSignUpAction: 'XÁC NHẬN ĐĂNG KÝ →',
+    emailVerifyTitle: 'NHẬP MÃ XÁC THỰC EMAIL 6 CHỮ SỐ',
+    emailVerifySub: 'Mã xác thực đã được gửi tới email',
+    btnVerifyAction: 'XÁC THỰC & HOÀN TẤT ĐĂNG KÝ →',
+    resendCode: 'Gửi lại mã OTP',
 
     // Footer
-    copyright: 'Bản quyền © NBA Predictor 2025 - Đã đăng ký bản quyền.',
+    developerCredit: 'Phát triển & Thiết kế bởi Son Pham (phamcongson297@gmail.com)',
+    copyright: 'Bản quyền © NBA Predictor 2026-27 - Đã đăng ký bản quyền.',
   },
 };

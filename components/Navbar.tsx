@@ -43,6 +43,17 @@ export default function Navbar() {
     toast.success(nextLocale === 'en' ? 'Switched language to English' : 'Đã chuyển sang Tiếng Việt');
   };
 
+  const navLinks = [
+    { href: '/regular-season', label: t.navRegular },
+    { href: '/standings', label: t.navStandings },
+    { href: '/teams', label: t.navTeams },
+    { href: '/stats', label: t.navLeaderboard },
+  ];
+
+  if (user?.isAdmin) {
+    navLinks.push({ href: '/admin', label: t.navAdmin });
+  }
+
   return (
     <header className="sticky top-0 z-50 glass-navbar transition-colors duration-300">
       {/* Top Header Bar */}
@@ -68,7 +79,7 @@ export default function Navbar() {
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
-              className="px-3 py-2 rounded-xl bg-slate-900/80 dark:bg-slate-900/80 light:bg-slate-200 border border-slate-700/60 text-xs font-black text-slate-200 dark:text-slate-200 light:text-slate-800 hover:border-amber-500 transition flex items-center space-x-1.5"
+              className="px-3 py-2 rounded-xl bg-slate-900/80 dark:bg-slate-900/80 light:bg-white border border-slate-700/60 light:border-slate-300 text-xs font-black text-slate-200 dark:text-slate-200 light:text-slate-800 hover:border-amber-500 transition flex items-center space-x-1.5 shadow-sm"
             >
               <span>🌐</span>
               <span>{locale === 'en' ? 'EN' : 'VI'}</span>
@@ -77,7 +88,7 @@ export default function Navbar() {
             {/* Theme Switcher */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-slate-900/80 dark:bg-slate-900/80 light:bg-slate-200 border border-slate-700/60 text-xs font-black text-slate-200 dark:text-slate-200 light:text-slate-800 hover:border-amber-500 transition"
+              className="p-2 rounded-xl bg-slate-900/80 dark:bg-slate-900/80 light:bg-white border border-slate-700/60 light:border-slate-300 text-xs font-black text-slate-200 dark:text-slate-200 light:text-slate-800 hover:border-amber-500 transition shadow-sm"
               title="Toggle Light/Dark Theme"
             >
               {theme === 'dark' ? '🌙' : '☀️'}
@@ -142,11 +153,11 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Sub-bar Nav Links (ONLY SHOWN FOR LOGGED-IN USERS) */}
+      {/* CENTERED Sub-bar Nav Links (ONLY SHOWN FOR LOGGED-IN USERS) */}
       {user && (
-        <div className="border-t border-slate-800/60 bg-slate-950/40 dark:bg-slate-950/40 light:bg-slate-100/90 py-2.5">
+        <div className="border-t border-slate-800/60 light:border-slate-300/80 bg-slate-950/40 dark:bg-slate-950/40 light:bg-slate-100/90 py-2.5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav className="hidden md:flex items-center space-x-3">
+            <nav className="hidden md:flex items-center justify-center space-x-3">
               <Link
                 href="/regular-season"
                 className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
@@ -158,13 +169,35 @@ export default function Navbar() {
                 <span>{t.navRegular}</span>
               </Link>
 
+              <Link
+                href="/standings"
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
+                  pathname === '/standings'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
+                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
+                }`}
+              >
+                <span>{t.navStandings}</span>
+              </Link>
+
+              <Link
+                href="/teams"
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
+                  pathname === '/teams' || pathname.startsWith('/team/')
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
+                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
+                }`}
+              >
+                <span>{t.navTeams}</span>
+              </Link>
+
               {/* Playoff Disabled Tab */}
               <div className="relative group cursor-not-allowed opacity-60 px-4 py-2 rounded-xl text-xs font-extrabold text-slate-400 flex items-center space-x-2 bg-slate-900/60 dark:bg-slate-900/60 light:bg-slate-200">
                 <span>{t.navPlayoffs}</span>
                 <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
                   {t.navPlayoffsLocked}
                 </span>
-                <div className="absolute top-11 left-0 hidden group-hover:block bg-slate-900 text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl whitespace-nowrap z-50">
+                <div className="absolute top-11 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl whitespace-nowrap z-50">
                   {t.navPlayoffsLockedTooltip}
                 </div>
               </div>
@@ -197,39 +230,19 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Mobile Menu Drawer (ONLY SHOWN FOR LOGGED-IN USERS) */}
+      {/* Mobile Menu Drawer */}
       {mobileMenuOpen && user && (
         <div className="md:hidden py-4 border-t border-slate-800 space-y-2 px-4 bg-slate-950">
-          <Link
-            href="/regular-season"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-4 py-3 rounded-xl text-sm font-bold bg-amber-500 text-slate-950"
-          >
-            {t.navRegular}
-          </Link>
-
-          <div className="px-4 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-900/50 flex justify-between items-center">
-            <span>{t.navPlayoffs}</span>
-            <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">{t.navPlayoffsLocked}</span>
-          </div>
-
-          <Link
-            href="/stats"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-900"
-          >
-            {t.navLeaderboard}
-          </Link>
-
-          {user.isAdmin && (
+          {navLinks.map((link) => (
             <Link
-              href="/admin"
+              key={link.href}
+              href={link.href}
               onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-900"
             >
-              {t.navAdmin}
+              {link.label}
             </Link>
-          )}
+          ))}
 
           <div className="pt-3 border-t border-slate-800 flex items-center justify-between px-2">
             <span className="text-xs font-bold text-amber-400">👤 {user.username}</span>

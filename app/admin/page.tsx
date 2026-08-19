@@ -19,6 +19,8 @@ export default function AdminPage() {
   // Roster Editor State in Modal
   const [editCoach, setEditCoach] = useState('');
   const [editRosterJson, setEditRosterJson] = useState('');
+  const [originalCoach, setOriginalCoach] = useState('');
+  const [originalRosterJson, setOriginalRosterJson] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Playoff state
@@ -111,11 +113,30 @@ export default function AdminPage() {
       setSelectedTeam(data);
 
       const pData = data.pendingData || data.scrapedData || { coach: '', athletes: [] };
-      setEditCoach(pData.coach || '');
-      setEditRosterJson(JSON.stringify(pData.athletes || [], null, 2));
+      const coachVal = pData.coach || '';
+      const rosterVal = JSON.stringify(pData.athletes || [], null, 2);
+
+      setEditCoach(coachVal);
+      setEditRosterJson(rosterVal);
+      setOriginalCoach(coachVal);
+      setOriginalRosterJson(rosterVal);
     } catch (err: any) {
       toast.error(err.message);
     }
+  };
+
+  const isDirty = editCoach !== originalCoach || editRosterJson !== originalRosterJson;
+
+  const handleCloseModal = () => {
+    if (isDirty) {
+      const confirmClose = window.confirm(
+        locale === 'en'
+          ? '⚠️ You have unsaved roster edits! Are you sure you want to close without saving?'
+          : '⚠️ Bạn có chỉnh sửa Roster chưa lưu! Bạn có chắc muốn đóng mà không lưu không?'
+      );
+      if (!confirmClose) return;
+    }
+    setSelectedTeam(null);
   };
 
   const handleScrapeRoster = async (teamId: number) => {
@@ -237,7 +258,7 @@ export default function AdminPage() {
         <div>
           <div className="flex items-center space-x-3">
             <span className="text-xs font-black bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full border border-amber-500/30">
-              COMMAND CENTER
+              COMMAND CENTER 2026-27
             </span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-white mt-2 leading-normal break-words">
@@ -374,7 +395,7 @@ export default function AdminPage() {
                       <span className="text-xs text-slate-400 font-mono">ID: {selectedTeam.id} | {selectedTeam.abbreviation}</span>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedTeam(null)} className="text-slate-400 hover:text-white font-bold text-xl">
+                  <button onClick={handleCloseModal} className="text-slate-400 hover:text-white font-bold text-xl">
                     ✕
                   </button>
                 </div>
@@ -403,10 +424,18 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  {/* Roster Edit Form (Pending Data) */}
-                  <div className="bg-amber-950/30 border border-amber-500/40 rounded-2xl p-5 space-y-4">
-                    <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider leading-normal">
-                      ⚠️ {locale === 'en' ? 'Pending Approval Data Editor' : 'Chỉnh Sửa Dữ Liệu Roster Chờ Duyệt'}
+                  {/* Roster Edit Form */}
+                  <div className={`p-5 rounded-2xl border ${
+                    selectedTeam.isApproved && !selectedTeam.pendingData
+                      ? 'bg-emerald-950/20 border-emerald-500/40'
+                      : 'bg-amber-950/30 border-amber-500/40'
+                  } space-y-4`}>
+                    <h4 className={`text-xs font-bold uppercase tracking-wider leading-normal ${
+                      selectedTeam.isApproved && !selectedTeam.pendingData ? 'text-emerald-400' : 'text-amber-400'
+                    }`}>
+                      {selectedTeam.isApproved && !selectedTeam.pendingData
+                        ? (locale === 'en' ? '✅ Approved Official Roster & Data' : '✅ Dữ Liệu Roster Chính Thức Đã Duyệt & Công Khai')
+                        : (locale === 'en' ? '⚠️ Pending Approval Roster Data Editor' : '⚠️ Dữ Liệu Roster Chờ Duyệt (Pending Data)')}
                     </h4>
 
                     <div>
@@ -433,21 +462,6 @@ export default function AdminPage() {
                         className="w-full glass-input p-3 rounded-xl text-xs font-mono"
                       />
                     </div>
-                  </div>
-
-                  {/* Currently Approved Data Display */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 leading-normal">
-                      ✅ {locale === 'en' ? 'Approved Public Data' : 'Dữ liệu hiện tại đang công khai'}
-                    </h4>
-                    {selectedTeam.scrapedData ? (
-                      <div>
-                        <p className="text-xs text-slate-300 leading-normal">Coach: {selectedTeam.scrapedData.coach}</p>
-                        <p className="text-xs text-slate-400 mt-1 leading-normal">Total Athletes: {selectedTeam.scrapedData.athleteCount}</p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 leading-normal">No roster data approved yet.</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -540,8 +554,8 @@ export default function AdminPage() {
               <tr>
                 <th className="p-4 leading-normal">ID</th>
                 <th className="p-4 leading-normal">Username</th>
-                <th className="p-4 leading-normal">Playoff Picks</th>
-                <th className="p-4 leading-normal">Regular Picks</th>
+                <th className="p-4 leading-normal">Email</th>
+                <th className="p-4 leading-normal">Status</th>
                 <th className="p-4 leading-normal">Role</th>
                 <th className="p-4 leading-normal">Actions</th>
               </tr>
@@ -551,8 +565,14 @@ export default function AdminPage() {
                 <tr key={u.id}>
                   <td className="p-4 font-mono text-xs text-slate-500">#{u.id}</td>
                   <td className="p-4 font-bold text-white leading-normal break-words">{u.username}</td>
-                  <td className="p-4 font-mono">{u._count.predictions}</td>
-                  <td className="p-4 font-mono">{u._count.regularPredictions}</td>
+                  <td className="p-4 text-xs text-slate-400 font-mono">{u.email || '-'}</td>
+                  <td className="p-4 text-xs">
+                    {u.isEmailVerified ? (
+                      <span className="text-emerald-400 font-bold">✓ Verified</span>
+                    ) : (
+                      <span className="text-amber-400 font-bold">⏳ Unverified</span>
+                    )}
+                  </td>
                   <td className="p-4">
                     {u.isAdmin ? (
                       <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-black border border-amber-500/30 leading-normal">

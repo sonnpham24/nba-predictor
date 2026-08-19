@@ -7,7 +7,9 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   username: z.string().min(3, 'Username phải có ít nhất 3 ký tự'),
+  email: z.string().email('Địa chỉ email không hợp lệ').optional().or(z.literal('')),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  confirmPassword: z.string().optional(),
 });
 
 export const predictionSchema = z.object({
