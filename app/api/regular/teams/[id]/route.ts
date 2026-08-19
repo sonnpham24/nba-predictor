@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getUserFromRequest, requireAdminFromRequest } from '@/lib/auth';
 import { approveTeamData, scrapeTeamRoster } from '@/lib/scraper';
+import { logSystemEvent } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -24,7 +25,6 @@ export async function GET(req: NextRequest) {
     const user = await getUserFromRequest(req);
     const isAdmin = user?.isAdmin || false;
 
-    // Nếu không phải admin và chưa được duyệt, ẩn pendingData
     if (!isAdmin) {
       return NextResponse.json({
         id: team.id,
@@ -38,7 +38,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Nếu là admin, trả về chi tiết cả pendingData và scrapedData
     return NextResponse.json({
       ...team,
       scrapedData: team.scrapedData ? JSON.parse(team.scrapedData) : null,
@@ -62,17 +61,31 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const action = body.action; // 'scrape' | 'approve'
+    const action = body.action; // 'scrape' | 'approve' | 'update_pending'
 
     if (action === 'scrape') {
       const result = await scrapeTeamRoster(teamId);
       return NextResponse.json(result);
+    } else if (action === 'update_pending') {
+      const { pendingData } = body;
+      const jsonString = typeof pendingData === 'string' ? pendingData : JSON.stringify(pendingData);
+
+      const updated = await prisma.team.update({
+        where: { id: teamId },
+        data: {
+          pendingData: jsonString,
+          isApproved: false,
+        },
+      });
+
+      await logSystemEvent('UPDATE_PENDING_ROSTER', `Admin updated pending data for team ${updated.name}`, 'INFO');
+      return NextResponse.json({ message: 'Đã cập nhật dữ liệu chờ duyệt thành công', team: updated });
     } else if (action === 'approve') {
       const result = await approveTeamData(teamId);
       return NextResponse.json(result);
     }
 
-    return NextResponse.json({ error: 'Hành động không hợp lệ. Cho phép: scrape hoặc approve' }, { status: 400 });
+    return NextResponse.json({ error: 'Hành động không hợp lệ' }, { status: 400 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi server' }, { status: 500 });
   }

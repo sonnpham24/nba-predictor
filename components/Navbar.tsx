@@ -45,6 +45,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 glass-navbar transition-colors duration-300">
+      {/* Top Header Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo */}
@@ -61,55 +62,6 @@ export default function Navbar() {
               </span>
             </div>
           </Link>
-
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center space-x-2 bg-slate-900/60 dark:bg-slate-900/60 light:bg-slate-200/80 p-1.5 rounded-2xl border border-white/10 shadow-inner">
-            <Link
-              href="/regular-season"
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
-                pathname === '/regular-season' || pathname.startsWith('/regular-season')
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
-                  : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
-              }`}
-            >
-              <span>{t.navRegular}</span>
-            </Link>
-
-            {/* Playoff Disabled Tab */}
-            <div className="relative group cursor-not-allowed opacity-60 px-4 py-2 rounded-xl text-xs font-extrabold text-slate-400 flex items-center space-x-2 bg-slate-950/40">
-              <span>{t.navPlayoffs}</span>
-              <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
-                {t.navPlayoffsLocked}
-              </span>
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl whitespace-nowrap z-50">
-                {t.navPlayoffsLockedTooltip}
-              </div>
-            </div>
-
-            <Link
-              href="/stats"
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
-                pathname === '/stats'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
-                  : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
-              }`}
-            >
-              <span>{t.navLeaderboard}</span>
-            </Link>
-
-            {user?.isAdmin && (
-              <Link
-                href="/admin"
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
-                  pathname === '/admin'
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
-                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
-                }`}
-              >
-                <span>{t.navAdmin}</span>
-              </Link>
-            )}
-          </nav>
 
           {/* Right Action Controls: Language, Theme, User Auth */}
           <div className="hidden md:flex items-center space-x-3">
@@ -164,7 +116,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Controls */}
           <div className="md:hidden flex items-center space-x-2">
             <button
               onClick={toggleLanguage}
@@ -178,71 +130,118 @@ export default function Navbar() {
             >
               {theme === 'dark' ? '🌙' : '☀️'}
             </button>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300"
-            >
-              {mobileMenuOpen ? '✕' : '☰'}
-            </button>
+            {user && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300"
+              >
+                {mobileMenuOpen ? '✕' : '☰'}
+              </button>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Mobile menu drawer */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-slate-800 space-y-2">
+      {/* Sub-bar Nav Links (ONLY SHOWN FOR LOGGED-IN USERS) */}
+      {user && (
+        <div className="border-t border-slate-800/60 bg-slate-950/40 dark:bg-slate-950/40 light:bg-slate-100/90 py-2.5">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="hidden md:flex items-center space-x-3">
+              <Link
+                href="/regular-season"
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
+                  pathname === '/regular-season' || pathname.startsWith('/regular-season')
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
+                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
+                }`}
+              >
+                <span>{t.navRegular}</span>
+              </Link>
+
+              {/* Playoff Disabled Tab */}
+              <div className="relative group cursor-not-allowed opacity-60 px-4 py-2 rounded-xl text-xs font-extrabold text-slate-400 flex items-center space-x-2 bg-slate-900/60 dark:bg-slate-900/60 light:bg-slate-200">
+                <span>{t.navPlayoffs}</span>
+                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                  {t.navPlayoffsLocked}
+                </span>
+                <div className="absolute top-11 left-0 hidden group-hover:block bg-slate-900 text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl whitespace-nowrap z-50">
+                  {t.navPlayoffsLockedTooltip}
+                </div>
+              </div>
+
+              <Link
+                href="/stats"
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
+                  pathname === '/stats'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
+                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
+                }`}
+              >
+                <span>{t.navLeaderboard}</span>
+              </Link>
+
+              {user.isAdmin && (
+                <Link
+                  href="/admin"
+                  className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
+                    pathname === '/admin'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
+                      : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
+                  }`}
+                >
+                  <span>{t.navAdmin}</span>
+                </Link>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Menu Drawer (ONLY SHOWN FOR LOGGED-IN USERS) */}
+      {mobileMenuOpen && user && (
+        <div className="md:hidden py-4 border-t border-slate-800 space-y-2 px-4 bg-slate-950">
+          <Link
+            href="/regular-season"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-3 rounded-xl text-sm font-bold bg-amber-500 text-slate-950"
+          >
+            {t.navRegular}
+          </Link>
+
+          <div className="px-4 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-900/50 flex justify-between items-center">
+            <span>{t.navPlayoffs}</span>
+            <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">{t.navPlayoffsLocked}</span>
+          </div>
+
+          <Link
+            href="/stats"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-900"
+          >
+            {t.navLeaderboard}
+          </Link>
+
+          {user.isAdmin && (
             <Link
-              href="/regular-season"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-3 rounded-xl text-sm font-bold bg-amber-500 text-slate-950"
-            >
-              {t.navRegular}
-            </Link>
-
-            <div className="px-4 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-900/50 flex justify-between items-center">
-              <span>{t.navPlayoffs}</span>
-              <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">{t.navPlayoffsLocked}</span>
-            </div>
-
-            <Link
-              href="/stats"
+              href="/admin"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-900"
             >
-              {t.navLeaderboard}
+              {t.navAdmin}
             </Link>
+          )}
 
-            {user?.isAdmin && (
-              <Link
-                href="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-900"
-              >
-                {t.navAdmin}
-              </Link>
-            )}
-
-            {user ? (
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-between px-2">
-                <span className="text-xs font-bold text-amber-400">👤 {user.username}</span>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 text-xs font-bold text-red-400 bg-red-500/10 rounded-lg"
-                >
-                  {t.navLogout}
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/auth"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block text-center w-full py-3 bg-amber-500 text-slate-950 font-black rounded-xl text-sm mt-2 uppercase"
-              >
-                {t.navLogin}
-              </Link>
-            )}
+          <div className="pt-3 border-t border-slate-800 flex items-center justify-between px-2">
+            <span className="text-xs font-bold text-amber-400">👤 {user.username}</span>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 text-xs font-bold text-red-400 bg-red-500/10 rounded-lg"
+            >
+              {t.navLogout}
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </header>
   );
 }

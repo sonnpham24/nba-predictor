@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 
@@ -29,16 +30,20 @@ export default function RootLayout({
           <LanguageProvider>
             <Navbar />
             <main className="flex-1">{children}</main>
+            <Footer />
             <Toaster
-              position="top-right"
+              position="bottom-right"
               toastOptions={{
+                duration: 4000,
                 style: {
                   background: '#0f172a',
                   color: '#fff',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
                   borderRadius: '16px',
-                  padding: '12px 20px',
+                  padding: '12px 18px',
                   boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                  fontSize: '14px',
+                  fontWeight: '600',
                 },
               }}
             />

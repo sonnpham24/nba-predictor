@@ -16,6 +16,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
 
+  // Roster Editor State in Modal
+  const [editCoach, setEditCoach] = useState('');
+  const [editRosterJson, setEditRosterJson] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
   // Playoff state
   const [playoffMatchups, setPlayoffMatchups] = useState<any[]>([]);
   const [playoffMatchupId, setPlayoffMatchupId] = useState('');
@@ -104,6 +109,10 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('Failed to load team details');
       const data = await res.json();
       setSelectedTeam(data);
+
+      const pData = data.pendingData || data.scrapedData || { coach: '', athletes: [] };
+      setEditCoach(pData.coach || '');
+      setEditRosterJson(JSON.stringify(pData.athletes || [], null, 2));
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -111,7 +120,7 @@ export default function AdminPage() {
 
   const handleScrapeRoster = async (teamId: number) => {
     try {
-      toast.loading('Scraping roster from web...', { id: 'scrapeRoster' });
+      toast.loading('Scraping roster from ESPN API...', { id: 'scrapeRoster' });
       const res = await fetch(`/api/regular/teams/${teamId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,11 +129,46 @@ export default function AdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Roster scrape failed');
 
-      toast.success(`✅ Scraped new roster (${data.athleteCount} players). Awaiting approval!`, { id: 'scrapeRoster' });
+      toast.success(`✅ Scraped new roster (${data.athleteCount} players). Pending approval!`, { id: 'scrapeRoster' });
       handleSelectTeamDetail(teamId);
       loadData();
     } catch (err: any) {
       toast.error(err.message || 'Error', { id: 'scrapeRoster' });
+    }
+  };
+
+  const handleSavePendingEdits = async (teamId: number) => {
+    setSavingEdit(true);
+    try {
+      let parsedAthletes = [];
+      try {
+        parsedAthletes = JSON.parse(editRosterJson);
+      } catch {
+        throw new Error(locale === 'en' ? 'Invalid JSON format for athletes roster' : 'Cú pháp JSON Roster không hợp lệ');
+      }
+
+      const pendingObject = {
+        coach: editCoach,
+        athleteCount: parsedAthletes.length,
+        athletes: parsedAthletes,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const res = await fetch(`/api/regular/teams/${teamId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_pending', pendingData: pendingObject }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Update failed');
+
+      toast.success('💾 Saved roster edits to Pending Data!');
+      handleSelectTeamDetail(teamId);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -138,7 +182,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Approval failed');
 
-      toast.success('✅ Team roster data approved successfully!');
+      toast.success('✅ Approved and published roster data successfully!');
       handleSelectTeamDetail(teamId);
       loadData();
     } catch (err: any) {
@@ -184,7 +228,7 @@ export default function AdminPage() {
     }
   };
 
-  const pendingApprovalsCount = teams.filter((t) => !t.isApproved && t.pendingData).length;
+  const pendingApprovalsCount = teams.filter((t) => !t.isApproved || t.pendingData !== null).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
@@ -200,7 +244,7 @@ export default function AdminPage() {
             ⚙️ ADMIN CONTROL DASHBOARD
           </h1>
           <p className="text-slate-400 text-sm mt-1 leading-normal break-words">
-            {locale === 'en' ? 'Manage 30 NBA teams, scrapers, roster approvals, live matchups & user access' : 'Điều hành toàn bộ dữ liệu 30 đội bóng, Scraper, Duyệt Roster, Matchups Live & Người Dùng'}
+            {locale === 'en' ? 'Manage 30 NBA teams, scrapers, roster edits & approvals, live matchups & user access' : 'Điều hành toàn bộ dữ liệu 30 đội bóng, Scraper, Sửa & Duyệt Roster, Matchups Live & Người Dùng'}
           </p>
         </div>
         <button
@@ -277,7 +321,7 @@ export default function AdminPage() {
                 {locale === 'en' ? '30 Official NBA Teams' : '30 Đội Bóng NBA Chính Thức'}
               </h2>
               <p className="text-xs text-slate-400 mt-1 leading-normal break-words">
-                {locale === 'en' ? 'Scrape names & logos directly. Player rosters are saved as Pending Approval.' : 'Cào Tên + Logo trực tiếp, thông tin Roster lưu ở dạng Chờ Duyệt (Pending Data).'}
+                {locale === 'en' ? 'Scrape names & logos directly. Player rosters are saved as Pending Approval for Admin review.' : 'Cào Tên + Logo trực tiếp, thông tin Roster lưu ở dạng Chờ Duyệt (Pending Data).'}
               </p>
             </div>
             <button
@@ -318,7 +362,7 @@ export default function AdminPage() {
             ))}
           </div>
 
-          {/* Inspection Modal */}
+          {/* Inspection & Editing Modal */}
           {selectedTeam && (
             <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
               <div className="glass-card max-w-3xl w-full p-8 rounded-3xl border border-amber-500/40 max-h-[90vh] overflow-y-auto shadow-2xl relative">
@@ -336,38 +380,65 @@ export default function AdminPage() {
                 </div>
 
                 <div className="space-y-6">
+                  {/* Action Buttons Header */}
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() => handleScrapeRoster(selectedTeam.id)}
                       className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition shadow-lg leading-normal"
                     >
-                      🔄 {locale === 'en' ? 'Re-scrape Roster' : 'Cào lại Roster (Roster Changes)'}
+                      🚀 {locale === 'en' ? 'Scrape Roster from ESPN' : 'Cào Dữ Liệu Roster Mới (ESPN)'}
                     </button>
-                    {selectedTeam.pendingData && (
-                      <button
-                        onClick={() => handleApproveTeamData(selectedTeam.id)}
-                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold transition shadow-lg leading-normal"
-                      >
-                        ✅ {locale === 'en' ? 'Approve Data' : 'Duyệt dữ liệu (Approve Data)'}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleSavePendingEdits(selectedTeam.id)}
+                      disabled={savingEdit}
+                      className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl text-xs font-black transition shadow-lg leading-normal"
+                    >
+                      💾 {locale === 'en' ? 'Save Edits' : 'Lưu Chỉnh Sửa'}
+                    </button>
+                    <button
+                      onClick={() => handleApproveTeamData(selectedTeam.id)}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold transition shadow-lg leading-normal"
+                    >
+                      ✅ {locale === 'en' ? 'Approve & Publish' : 'Duyệt & Công Khai (Approve)'}
+                    </button>
                   </div>
 
-                  {selectedTeam.pendingData && (
-                    <div className="bg-amber-950/30 border border-amber-500/40 rounded-2xl p-5">
-                      <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 leading-normal">
-                        ⚠️ {locale === 'en' ? 'Scraped Pending Roster Data' : 'Dữ liệu mới cào được (Pending Approval)'} - {selectedTeam.pendingData.athleteCount} players
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-normal">Coach: {selectedTeam.pendingData.coach}</p>
-                      <div className="max-h-48 overflow-y-auto mt-3 text-xs text-slate-400 bg-slate-950 p-3 rounded-xl font-mono">
-                        {JSON.stringify(selectedTeam.pendingData.athletes?.slice(0, 5), null, 2)}
-                      </div>
-                    </div>
-                  )}
+                  {/* Roster Edit Form (Pending Data) */}
+                  <div className="bg-amber-950/30 border border-amber-500/40 rounded-2xl p-5 space-y-4">
+                    <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider leading-normal">
+                      ⚠️ {locale === 'en' ? 'Pending Approval Data Editor' : 'Chỉnh Sửa Dữ Liệu Roster Chờ Duyệt'}
+                    </h4>
 
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                        {locale === 'en' ? 'Head Coach Name:' : 'Tên Huấn Luyện Viên (Head Coach):'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editCoach}
+                        onChange={(e) => setEditCoach(e.target.value)}
+                        placeholder="e.g. Erik Spoelstra"
+                        className="w-full glass-input p-3 rounded-xl text-xs font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
+                        {locale === 'en' ? 'Athletes Roster (JSON Array):' : 'Danh Sách Cầu Thủ (Dạng Mảng JSON):'}
+                      </label>
+                      <textarea
+                        rows={8}
+                        value={editRosterJson}
+                        onChange={(e) => setEditRosterJson(e.target.value)}
+                        className="w-full glass-input p-3 rounded-xl text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Currently Approved Data Display */}
                   <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5">
                     <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 leading-normal">
-                      ✅ {locale === 'en' ? 'Approved Public Roster Data' : 'Dữ liệu hiện tại đang công khai (Approved Live Data)'}
+                      ✅ {locale === 'en' ? 'Approved Public Data' : 'Dữ liệu hiện tại đang công khai'}
                     </h4>
                     {selectedTeam.scrapedData ? (
                       <div>
