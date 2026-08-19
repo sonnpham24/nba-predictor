@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import Navbar from "@/components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NBA Predict 2025",
-  description: "Dự đoán NBA Playoff cực dễ và vui",
+  title: "NBA Predictor 2025 - Regular Season & Playoff",
+  description: "Dự đoán kết quả NBA Regular Season và Playoffs cực vui",
 };
 
 export default function RootLayout({
@@ -24,12 +25,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="vi">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-100 min-h-screen flex flex-col`}
       >
-        {children}
-        <Toaster position="top-right" /> {/* ✅ THÊM DÒNG NÀY */}
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Toaster position="top-right" />
       </body>
     </html>
   );

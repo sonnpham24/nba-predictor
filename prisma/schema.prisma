@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,41 +11,99 @@ datasource db {
 }
 
 model User {
-  id          Int          @id @default(autoincrement())
-  username    String       @unique
-  password    String
-  isAdmin     Boolean      @default(false)
-  predictions Prediction[]
+  id                 Int                 @id @default(autoincrement())
+  username           String              @unique
+  password           String
+  isAdmin            Boolean             @default(false)
+  predictions        Prediction[]
+  regularPredictions RegularPrediction[]
 }
 
 model Prediction {
   id              Int      @id @default(autoincrement())
   user            User     @relation(fields: [userId], references: [id])
   userId          Int
-
   matchup         Matchup  @relation(fields: [matchupId], references: [id])
   matchupId       Int
-
   teamA           String
   teamB           String
   predictedWinner String
   predictedScore  String
   createdAt       DateTime @default(now())
 
-  @@unique([userId, matchupId]) // mỗi người chỉ đoán 1 lần cho mỗi cặp
+  @@unique([userId, matchupId])
 }
-
 
 model Matchup {
-  id            Int           @id @default(autoincrement())
-  teamA         String
-  teamB         String
-  round         Int?          // Vòng đấu: 1 = vòng đầu, 2 = bán kết, 3 = chung kết miền, 4 = chung kết NBA
-  conference    String
-  actualWinner  String?       // Kết quả thật
-  actualScore   String?       // Tỷ số thật
-
-  predictions   Prediction[]  // Một matchup có nhiều dự đoán
-  lockTime       DateTime?    // ⏰ Deadline cho trận đấu
+  id           Int          @id @default(autoincrement())
+  teamA        String
+  teamB        String
+  round        Int?
+  conference   String
+  actualWinner String?
+  actualScore  String?
+  predictions  Prediction[]
+  lockTime     DateTime?
 }
 
+model Team {
+  id                 Int                 @id
+  name               String
+  abbreviation       String
+  logo               String
+  color              String?
+  conference         String?
+  scrapedData        String?
+  pendingData        String?
+  isApproved         Boolean             @default(false)
+  updatedAt          DateTime            @updatedAt
+  homeMatchups       RegularMatchup[]    @relation("TeamA")
+  awayMatchups       RegularMatchup[]    @relation("TeamB")
+  wonMatchups        RegularMatchup[]    @relation("WonMatchups")
+  regularPredictions RegularPrediction[]
+}
+
+model RegularMatchup {
+  id             Int                 @id @default(autoincrement())
+  espnId         String?             @unique
+  teamAId        Int
+  teamA          Team                @relation("TeamA", fields: [teamAId], references: [id])
+  teamBId        Int
+  teamB          Team                @relation("TeamB", fields: [teamBId], references: [id])
+  startTime      DateTime
+  status         String              @default("SCHEDULED")
+  clock          String?
+  period         Int?
+  scoreA         Int?
+  scoreB         Int?
+  actualWinnerId Int?
+  actualWinner   Team?               @relation("WonMatchups", fields: [actualWinnerId], references: [id])
+  actualScore    String?
+  isSettled      Boolean             @default(false)
+  lockTime       DateTime
+  openTime       DateTime
+  predictions    RegularPrediction[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model RegularPrediction {
+  id                Int            @id @default(autoincrement())
+  userId            Int
+  user              User           @relation(fields: [userId], references: [id])
+  matchupId         Int
+  matchup           RegularMatchup @relation(fields: [matchupId], references: [id])
+  predictedWinnerId Int
+  predictedWinner   Team           @relation(fields: [predictedWinnerId], references: [id])
+  createdAt         DateTime       @default(now())
+
+  @@unique([userId, matchupId])
+}
+
+model SystemLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  details   String
+  level     String   @default("INFO")
+  createdAt DateTime @default(now())
+}

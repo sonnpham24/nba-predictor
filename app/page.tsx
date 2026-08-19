@@ -7,13 +7,15 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/auth');
+    router.replace('/regular-season');
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-      <p className="text-xl font-semibold">Đang chuyển hướng đến trang đăng nhập...</p>
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-200">
+      <div className="flex items-center space-x-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
+        <p className="text-lg font-semibold">Đang chuyển hướng đến NBA Regular Season Predictor...</p>
+      </div>
     </div>
   );
 }
-

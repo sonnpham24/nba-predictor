@@ -1,139 +1,132 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
-} from 'recharts';
 
 export default function StatsPage() {
-  const [stats, setStats] = useState<any[]>([]);
-  const [topMatches, setTopMatches] = useState<any[]>([]);
+  const [activeSubTab, setActiveSubTab] = useState<'regular' | 'playoff'>('regular');
+  const [regLeaderboard, setRegLeaderboard] = useState<any[]>([]);
+  const [playoffLeaderboard, setPlayoffLeaderboard] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const res = await fetch('/api/stats');
-      const data = await res.json();
-      setStats(data);
-      setTopMatches(
-        [...data]
-          .filter((m) => m.correct > 0)
-          .sort((a, b) => b.correct - a.correct)
-          .slice(0, 3)
-      );      
+    const fetchData = async () => {
+      try {
+        const [rRes, pRes] = await Promise.all([
+          fetch('/api/regular/leaderboard'),
+          fetch('/api/leaderboard'),
+        ]);
+
+        if (rRes.ok) setRegLeaderboard(await rRes.json());
+        if (pRes.ok) setPlayoffLeaderboard(await pRes.json());
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchStats();
+    fetchData();
   }, []);
 
-  const roundStats = [1, 2, 3, 4].map((round) => {
-    const roundMatches = stats.filter((m) => m.round === round);
-    const total = roundMatches.length;
-    const avgAccuracy = total === 0
-      ? 0
-      : Math.round(roundMatches.reduce((acc, m) => acc + m.accuracy, 0) / total);
-    return { name: `Vòng ${round}`, value: avgAccuracy };
-  });
-
-  const conferenceStats = ['west', 'east'].map((conf) => {
-    const matches = stats.filter((m) => m.conference === conf);
-    const avg = matches.length === 0
-      ? 0
-      : Math.round(matches.reduce((acc, m) => acc + m.accuracy, 0) / matches.length);
-    return { name: conf === 'west' ? 'Western' : 'Eastern', value: avg };
-  });
-
   return (
-    <div className="min-h-screen bg-gradient-animate text-black p-4 sm:p-6">
-      <div className="starry-background"></div>
-      <h1 className="text-2xl sm:text-3xl text-white font-bold text-center mb-6">📊 Thống kê toàn giải đấu</h1>
+    <div className="max-w-5xl mx-auto px-4 py-10">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white">📊 Bảng Xếp Hạng Người Dùng</h1>
+        <p className="text-slate-400 text-sm mt-2">Bảng vinh danh những người chơi xuất sắc nhất NBA Predictor 2025</p>
+      </div>
 
-      {/* TOP MATCHES */}
-      <section className="bg-white p-4 rounded-xl shadow max-w-5xl mx-auto mb-10 text-sm sm:text-base">
-        <h2 className="text-lg font-bold text-blue-700 mb-2">🏆 Top 3 trận có nhiều người đoán đúng nhất</h2>
-        <div className="bg-blue-50 border border-blue-200 rounded p-3">
-          {topMatches.length === 0 ? (
-            <p>Không có dữ liệu.</p>
+      {/* Sub Tabs */}
+      <div className="flex justify-center space-x-3 mb-8">
+        <button
+          onClick={() => setActiveSubTab('regular')}
+          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition ${
+            activeSubTab === 'regular'
+              ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+              : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
+          }`}
+        >
+          🏀 Regular Season (+1 điểm)
+        </button>
+        <button
+          onClick={() => setActiveSubTab('playoff')}
+          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition ${
+            activeSubTab === 'playoff'
+              ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+              : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
+          }`}
+        >
+          🏆 Playoff Predictor
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+        </div>
+      ) : activeSubTab === 'regular' ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+          <h2 className="text-lg font-bold text-white mb-4">🏀 Bảng Xếp Hạng Regular Season</h2>
+          {regLeaderboard.length === 0 ? (
+            <p className="text-center text-slate-400 py-8">Chưa có dữ liệu dự đoán nào.</p>
           ) : (
-            <ul className="space-y-1">
-              {topMatches.map((m, i) => (
-                <li key={m.id}>
-                  <strong>{i + 1}. {m.label}</strong> – {m.correct} người đoán đúng ({m.accuracy}%)
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-950 text-xs font-bold text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">Hạng</th>
+                    <th className="py-3 px-4">Người chơi</th>
+                    <th className="py-3 px-4 text-center">Tổng dự đoán</th>
+                    <th className="py-3 px-4 text-center">Đoán đúng</th>
+                    <th className="py-3 px-4 text-right">Tổng điểm</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {regLeaderboard.map((user, i) => (
+                    <tr key={user.id} className="hover:bg-slate-800/40 transition">
+                      <td className="py-3 px-4 font-black text-amber-400">
+                        {i === 0 ? '🥇 1' : i === 1 ? '🥈 2' : i === 2 ? '🥉 3' : `#${i + 1}`}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-white">{user.username}</td>
+                      <td className="py-3 px-4 text-center font-mono">{user.totalPredictions}</td>
+                      <td className="py-3 px-4 text-center font-bold text-emerald-400">{user.correctPredictions}</td>
+                      <td className="py-3 px-4 text-right font-black text-lg text-amber-400">{user.score} pts</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      </section>
-
-      {/* BAR CHART */}
-      <section className="bg-white p-4 rounded-xl shadow max-w-5xl mx-auto mb-10">
-        <h2 className="text-xl font-semibold mb-4">🔥 Độ chính xác dự đoán từng trận</h2>
-        <div className="h-[350px] sm:h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stats}>
-              <XAxis dataKey="label" hide />
-              <YAxis />
-              <Tooltip
-                content={({ active, payload }: any) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                      <div className="bg-white border border-gray-300 p-2 rounded text-xs sm:text-sm">
-                        <p><strong>{data.label}</strong></p>
-                        <p>🎯 Độ chính xác: {data.accuracy}%</p>
-                        <p>👥 Tổng lượt đoán: {data.total}</p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Bar
-                dataKey="accuracy"
-                fill="#4ade80"
-                onClick={(data) => window.location.href = `/matchup/${data.id}`}
-                cursor="pointer"
-              />
-            </BarChart>
-          </ResponsiveContainer>
+      ) : (
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+          <h2 className="text-lg font-bold text-white mb-4">🏆 Bảng Xếp Hạng Playoff Predictor</h2>
+          {playoffLeaderboard.length === 0 ? (
+            <p className="text-center text-slate-400 py-8">Chưa có dữ liệu điểm số Playoff.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-950 text-xs font-bold text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">Hạng</th>
+                    <th className="py-3 px-4">Người chơi</th>
+                    <th className="py-3 px-4 text-right">Tổng điểm Playoff</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {playoffLeaderboard.map((user, i) => (
+                    <tr key={user.id} className="hover:bg-slate-800/40 transition">
+                      <td className="py-3 px-4 font-black text-amber-400">
+                        {i === 0 ? '🥇 1' : i === 1 ? '🥈 2' : i === 2 ? '🥉 3' : `#${i + 1}`}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-white">{user.username}</td>
+                      <td className="py-3 px-4 text-right font-black text-lg text-amber-400">{user.score} pts</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </section>
-
-      {/* PIE CHARTS */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">📅 Trung bình đúng theo vòng</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={roundStats} dataKey="value" nameKey="name" label>
-                <Cell fill="#4ade80" />
-                <Cell fill="#60a5fa" />
-                <Cell fill="#facc15" />
-                <Cell fill="#f87171" />
-              </Pie>
-              <Legend />
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">🌍 Tỷ lệ đúng theo miền</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={conferenceStats} dataKey="value" nameKey="name" label>
-                <Cell fill="#60a5fa" />
-                <Cell fill="#fbbf24" />
-              </Pie>
-              <Legend />
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
-      <div className="text-center text-sm text-white opacity-60 mt-10">
-        {/* Footer spacing for mobile scroll */}
-        Copyright © NBA Predict 2025 - by Son Pham phamcongson297@gmail.com
-      </div>
+      )}
     </div>
   );
 }
