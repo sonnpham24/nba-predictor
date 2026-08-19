@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
   const { t, locale } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'profile' | 'avatar' | 'password'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'avatar' | 'history' | 'password'>('profile');
   const [teams, setTeams] = useState<any[]>([]);
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,9 +28,21 @@ export default function SettingsPage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [updatingPassword, setUpdatingPassword] = useState(false);
 
+  // History Tab States
+  const [historyList, setHistoryList] = useState<any[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      loadHistory(historyPage);
+    }
+  }, [activeTab, historyPage]);
 
   const loadData = async () => {
     setLoading(true);
@@ -55,6 +67,22 @@ export default function SettingsPage() {
       toast.error('Error loading settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadHistory = async (page: number) => {
+    setLoadingHistory(true);
+    try {
+      const res = await fetch(`/api/me/predictions?page=${page}&limit=5`);
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryList(data.predictions || []);
+        setHistoryTotalPages(data.pagination?.totalPages || 1);
+      }
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
@@ -179,6 +207,7 @@ export default function SettingsPage() {
         {[
           { id: 'profile', label: t.tabProfile },
           { id: 'avatar', label: t.tabAvatar },
+          { id: 'history', label: t.tabHistory },
           { id: 'password', label: t.tabPassword },
         ].map((tab) => (
           <button
@@ -305,7 +334,106 @@ export default function SettingsPage() {
         </form>
       )}
 
-      {/* TAB 3: PASSWORD CHANGE */}
+      {/* TAB 3: PREDICTION HISTORY (WITH PAGINATION) */}
+      {activeTab === 'history' && (
+        <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
+                {t.historyTitle}
+              </h2>
+              <p className="text-xs text-slate-400 font-medium leading-normal">
+                {t.historySub}
+              </p>
+            </div>
+            <span className="text-xs font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+              {t.pageOf} {historyPage} / {historyTotalPages}
+            </span>
+          </div>
+
+          {loadingHistory ? (
+            <div className="py-16 flex justify-center items-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500"></div>
+            </div>
+          ) : historyList.length === 0 ? (
+            <div className="text-center py-12 text-slate-500 text-sm font-semibold">
+              {t.noPredictionsYet}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {historyList.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 hover:border-amber-500/30 transition"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      {item.teamALogo && <img src={item.teamALogo} alt={item.teamAName} className="w-8 h-8 object-contain" />}
+                      <span className="text-xs font-black text-white">{item.teamAName}</span>
+                    </div>
+                    <span className="text-xs font-black text-slate-600">VS</span>
+                    <div className="flex items-center space-x-2">
+                      {item.teamBLogo && <img src={item.teamBLogo} alt={item.teamBName} className="w-8 h-8 object-contain" />}
+                      <span className="text-xs font-black text-white">{item.teamBName}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 text-xs">
+                    <span className="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl font-semibold">
+                      🗳️ Picked: <strong className="text-amber-400">{item.myPick}</strong>
+                    </span>
+
+                    {item.isSettled ? (
+                      item.isCorrect ? (
+                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-xl font-black uppercase">
+                          🟢 WON (+1 PT)
+                        </span>
+                      ) : (
+                        <span className="bg-red-500/20 text-red-400 border border-red-500/40 px-3 py-1.5 rounded-xl font-black uppercase">
+                          🔴 LOST (0 PT)
+                        </span>
+                      )
+                    ) : (
+                      <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-xl font-bold uppercase">
+                        ⏳ PENDING
+                      </span>
+                    )}
+
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {new Date(item.startTime).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                <button
+                  onClick={() => setHistoryPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={historyPage <= 1}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-xs font-black text-white rounded-xl border border-slate-800 transition"
+                >
+                  {t.prevPage}
+                </button>
+
+                <span className="text-xs text-slate-400 font-mono">
+                  {t.pageOf} <strong>{historyPage}</strong> / {historyTotalPages}
+                </span>
+
+                <button
+                  onClick={() => setHistoryPage((prev) => Math.min(prev + 1, historyTotalPages))}
+                  disabled={historyPage >= historyTotalPages}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-xs font-black text-white rounded-xl border border-slate-800 transition"
+                >
+                  {t.nextPage}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 4: PASSWORD CHANGE */}
       {activeTab === 'password' && (
         <form onSubmit={handleChangePassword} className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-5 max-w-md mx-auto">
           <div>

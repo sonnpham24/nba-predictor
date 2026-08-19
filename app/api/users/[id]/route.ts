@@ -38,6 +38,58 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 });
     }
 
+    // Lấy 10 dự đoán gần đây nhất
+    const recent10Picks = await prisma.regularPrediction.findMany({
+      where: { userId },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        matchup: {
+          include: {
+            teamA: true,
+            teamB: true,
+          },
+        },
+        predictedWinner: true,
+      },
+    });
+
+    const recentPredictions = recent10Picks.map((p) => {
+      const m = p.matchup;
+      const teamAName = m.teamA ? m.teamA.name : m.customTeamA || 'Team A';
+      const teamBName = m.teamB ? m.teamB.name : m.customTeamB || 'Team B';
+      const teamALogo = m.teamA ? m.teamA.logo : m.customLogoA;
+      const teamBLogo = m.teamB ? m.teamB.logo : m.customLogoB;
+      const myPick = p.predictedWinner ? p.predictedWinner.name : p.customPredictedWinner || 'N/A';
+
+      let isCorrect: boolean | null = null;
+      let points = 0;
+
+      if (m.isSettled) {
+        if (p.predictedWinnerId && m.actualWinnerId) {
+          isCorrect = p.predictedWinnerId === m.actualWinnerId;
+        } else if (p.customPredictedWinner && m.customWinner) {
+          isCorrect = p.customPredictedWinner === m.customWinner;
+        }
+        if (isCorrect) points = 1;
+      }
+
+      return {
+        id: p.id,
+        createdAt: p.createdAt,
+        teamAName,
+        teamBName,
+        teamALogo,
+        teamBLogo,
+        status: m.status,
+        isSettled: m.isSettled,
+        actualScore: m.actualScore,
+        myPick,
+        isCorrect,
+        points,
+      };
+    });
+
     // Tính toán thống kê dự đoán Regular Season & Playoff
     const [regPredictions, playoffPredictions] = await Promise.all([
       prisma.regularPrediction.findMany({
@@ -81,6 +133,7 @@ export async function GET(req: NextRequest) {
         totalPicks,
         totalCorrect,
       },
+      recentPredictions,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi server' }, { status: 500 });

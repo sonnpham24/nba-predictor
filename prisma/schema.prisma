@@ -77,10 +77,15 @@ model Team {
 model RegularMatchup {
   id             Int                 @id @default(autoincrement())
   espnId         String?             @unique
-  teamAId        Int
-  teamA          Team                @relation("TeamA", fields: [teamAId], references: [id])
-  teamBId        Int
-  teamB          Team                @relation("TeamB", fields: [teamBId], references: [id])
+  teamAId        Int?
+  teamA          Team?               @relation("TeamA", fields: [teamAId], references: [id])
+  teamBId        Int?
+  teamB          Team?               @relation("TeamB", fields: [teamBId], references: [id])
+  customTeamA    String?
+  customTeamB    String?
+  customLogoA    String?
+  customLogoB    String?
+  isCustom       Boolean             @default(false)
   startTime      DateTime
   status         String              @default("SCHEDULED")
   clock          String?
@@ -89,6 +94,7 @@ model RegularMatchup {
   scoreB         Int?
   actualWinnerId Int?
   actualWinner   Team?               @relation("WonMatchups", fields: [actualWinnerId], references: [id])
+  customWinner   String?
   actualScore    String?
   isSettled      Boolean             @default(false)
   lockTime       DateTime
@@ -99,14 +105,15 @@ model RegularMatchup {
 }
 
 model RegularPrediction {
-  id                Int            @id @default(autoincrement())
-  userId            Int
-  user              User           @relation(fields: [userId], references: [id])
-  matchupId         Int
-  matchup           RegularMatchup @relation(fields: [matchupId], references: [id])
-  predictedWinnerId Int
-  predictedWinner   Team           @relation(fields: [predictedWinnerId], references: [id])
-  createdAt         DateTime       @default(now())
+  id                     Int            @id @default(autoincrement())
+  userId                 Int
+  user                   User           @relation(fields: [userId], references: [id])
+  matchupId              Int
+  matchup                RegularMatchup @relation(fields: [matchupId], references: [id])
+  predictedWinnerId      Int?
+  predictedWinner        Team?          @relation(fields: [predictedWinnerId], references: [id])
+  customPredictedWinner  String?
+  createdAt              DateTime       @default(now())
 
   @@unique([userId, matchupId])
 }

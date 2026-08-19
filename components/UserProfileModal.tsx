@@ -29,9 +29,11 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
 
   if (!userId) return null;
 
+  const recentPredictions: any[] = userProfile?.recentPredictions || [];
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="glass-card max-w-lg w-full p-8 rounded-3xl border border-amber-500/40 relative shadow-2xl animate-fade-in overflow-hidden">
+      <div className="glass-card max-w-xl w-full p-8 rounded-3xl border border-amber-500/40 relative shadow-2xl animate-fade-in overflow-hidden max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-slate-400 hover:text-white font-bold text-xl transition"
@@ -144,8 +146,54 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
               </div>
             </div>
 
+            {/* 10 Recent Predictions Section */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                {t.recent10Predictions}
+              </h4>
+              {recentPredictions.length === 0 ? (
+                <p className="text-xs text-slate-500 italic text-center py-4">{t.noPredictionsYet}</p>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {recentPredictions.map((rp) => (
+                    <div
+                      key={rp.id}
+                      className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-slate-300">
+                          {rp.teamAName} vs {rp.teamBName}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-slate-900 px-2 py-0.5 rounded text-[10px] text-amber-400 font-mono">
+                          Pick: {rp.myPick}
+                        </span>
+                        {rp.isSettled ? (
+                          rp.isCorrect ? (
+                            <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-black">
+                              +1 PT
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-black">
+                              0 PT
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-bold">
+                            PENDING
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Footer Actions */}
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
               <span className="text-[10px] text-slate-500 font-mono">
                 {t.memberSince}: {new Date(userProfile.createdAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'vi-VN')}
               </span>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 export default function UserPublicProfilePage() {
   const { id } = useParams();
@@ -41,6 +42,8 @@ export default function UserPublicProfilePage() {
     );
   }
 
+  const recentPredictions: any[] = userProfile.recentPredictions || [];
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
       {/* Back Button */}
@@ -69,8 +72,8 @@ export default function UserPublicProfilePage() {
               </div>
             )}
             {userProfile.isAdmin && (
-              <span className="absolute bottom-0 right-0 bg-blue-600 text-white text-sm font-black p-1.5 rounded-full shadow-lg border-2 border-slate-950" title="Verified Admin">
-                ☑️
+              <span className="absolute bottom-0 right-0" title="Verified Admin">
+                <VerifiedBadge />
               </span>
             )}
           </div>
@@ -80,11 +83,7 @@ export default function UserPublicProfilePage() {
               <h1 className="text-3xl sm:text-4xl font-black text-white leading-normal break-words">
                 {userProfile.displayName || userProfile.username}
               </h1>
-              {userProfile.isAdmin && (
-                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-black px-2.5 py-1 rounded-full uppercase">
-                  ☑️ {t.verifiedAdminCheckmark}
-                </span>
-              )}
+              {userProfile.isAdmin && <VerifiedBadge showText />}
             </div>
             <p className="text-xs text-slate-400 font-mono mt-1">@{userProfile.username}</p>
           </div>
@@ -150,6 +149,50 @@ export default function UserPublicProfilePage() {
               {userProfile.stats?.totalPicks || 0}
             </div>
           </div>
+        </div>
+
+        {/* 10 Recent Predictions Section */}
+        <div className="space-y-4 text-left max-w-md mx-auto pt-4 border-t border-slate-800">
+          <h3 className="text-sm font-black text-white uppercase tracking-wider text-center">
+            {t.recent10Predictions}
+          </h3>
+          {recentPredictions.length === 0 ? (
+            <p className="text-xs text-slate-500 italic text-center py-4">{t.noPredictionsYet}</p>
+          ) : (
+            <div className="space-y-2">
+              {recentPredictions.map((rp) => (
+                <div
+                  key={rp.id}
+                  className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between text-xs"
+                >
+                  <span className="font-bold text-slate-300">
+                    {rp.teamAName} vs {rp.teamBName}
+                  </span>
+
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-slate-900 px-2 py-0.5 rounded text-[10px] text-amber-400 font-mono">
+                      Pick: {rp.myPick}
+                    </span>
+                    {rp.isSettled ? (
+                      rp.isCorrect ? (
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-black">
+                          +1 PT
+                        </span>
+                      ) : (
+                        <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-black">
+                          0 PT
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-bold">
+                        PENDING
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="text-xs text-slate-500 font-mono pt-4 border-t border-slate-800">

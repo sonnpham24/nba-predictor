@@ -21,9 +21,10 @@ export const translations = {
 
     // Settings Page
     settingsTitle: '👤 USER ACCOUNT & PROFILE SETTINGS',
-    settingsSub: 'Manage your avatar, supported NBA team, display name, bio, and security settings.',
+    settingsSub: 'Manage your avatar, supported NBA team, display name, bio, and view prediction history.',
     tabProfile: '🎨 Profile & Favorite Team',
     tabAvatar: '🖼️ Avatar Upload',
+    tabHistory: '📜 Prediction History',
     tabPassword: '🔒 Change Password',
     displayNameLabel: 'Display Name / Nickname',
     displayNamePlaceholder: 'e.g. KingJames23',
@@ -37,6 +38,19 @@ export const translations = {
     newPasswordLabel: 'New Password',
     confirmNewPasswordLabel: 'Confirm New Password',
     btnChangePassword: 'UPDATE PASSWORD NOW →',
+
+    // History & Pagination
+    historyTitle: '📜 YOUR PREDICTION HISTORY',
+    historySub: 'Review all past regular season & playoff picks and points earned.',
+    recent10Predictions: '📜 10 Recent Predictions History',
+    prevPage: '← Previous',
+    nextPage: 'Next →',
+    pageOf: 'Page',
+    noPredictionsYet: 'No prediction history available yet.',
+
+    // Admin Custom Matchups
+    customMatchupTitle: '➕ Create Custom Matchup',
+    settleCustomTitle: '🏁 Settle Custom Matchups & Distribute Points',
 
     // Public Profile Modal & Page
     publicProfileTitle: 'Predictor Profile Showcase',
@@ -65,7 +79,7 @@ export const translations = {
     tomorrow: 'Tomorrow',
     inDays: 'Days',
     predictOpen: 'Prediction Open',
-    predictLocked: 'Locked (30m before tip-off)',
+    predictLocked: 'Locked (at tip-off)',
     finished: 'FINISHED',
     live: 'LIVE',
     scheduled: 'SCHEDULED',
@@ -171,9 +185,10 @@ export const translations = {
 
     // Settings Page
     settingsTitle: '👤 CÀI ĐẶT TÀI KHOẢN & HỒ SƠ',
-    settingsSub: 'Quản lý ảnh đại diện, đội bóng NBA ủng hộ, tên hiển thị, tiểu sử và mật khẩu.',
+    settingsSub: 'Quản lý ảnh đại diện, đội bóng NBA ủng hộ, tên hiển thị, tiểu sử và xem lịch sử dự đoán.',
     tabProfile: '🎨 Hồ Sơ & Đội Bóng Yêu Thích',
     tabAvatar: '🖼️ Đổi Ảnh Đại Diện',
+    tabHistory: '📜 Lịch Sử Dự Đoán',
     tabPassword: '🔒 Đổi Mật Khẩu',
     displayNameLabel: 'Tên Hiển Thị / Biệt Danh',
     displayNamePlaceholder: 'Ví dụ: KingJames23',
@@ -187,6 +202,19 @@ export const translations = {
     newPasswordLabel: 'Mật Khẩu Mới',
     confirmNewPasswordLabel: 'Xác Nhận Mật Khẩu Mới',
     btnChangePassword: 'CẬP NHẬT MẬT KHẨU →',
+
+    // History & Pagination
+    historyTitle: '📜 LỊCH SỬ DỰ ĐOÁN CỦA BẠN',
+    historySub: 'Xem lại tất cả các lượt dự đoán Regular Season & Playoff và số điểm đã đạt được.',
+    recent10Predictions: '📜 Lịch Sử 10 Dự Đoán Gần Nhất',
+    prevPage: '← Trang Trước',
+    nextPage: 'Trang Sau →',
+    pageOf: 'Trang',
+    noPredictionsYet: 'Chưa có lịch sử dự đoán nào.',
+
+    // Admin Custom Matchups
+    customMatchupTitle: '➕ Tự Tạo Trận Đấu Mới (Custom Matchup)',
+    settleCustomTitle: '🏁 Cập Nhật Kết Quả & Tự Động Phân Điểm',
 
     // Public Profile Modal & Page
     publicProfileTitle: 'Hồ Sơ Người Chơi NBA Predictor',
@@ -215,7 +243,7 @@ export const translations = {
     tomorrow: 'Ngày mai',
     inDays: 'Ngày',
     predictOpen: 'Đang mở dự đoán',
-    predictLocked: 'Đã khóa (30 phút trước giờ đấu)',
+    predictLocked: 'Đã khóa (đúng giờ thi đấu)',
     finished: 'ĐÃ KẾT THÚC',
     live: 'TRỰC TIẾP',
     scheduled: 'SẮP DIỄN RA',

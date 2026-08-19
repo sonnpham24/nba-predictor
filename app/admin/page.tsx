@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 
 export default function AdminPage() {
   const { t, locale } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'teams' | 'matchups' | 'users' | 'leaderboard' | 'logs' | 'playoff'>('teams');
+  const [activeTab, setActiveTab] = useState<'teams' | 'matchups' | 'custom' | 'users' | 'leaderboard' | 'logs' | 'playoff'>('teams');
   const [teams, setTeams] = useState<any[]>([]);
   const [matchups, setMatchups] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -22,6 +22,21 @@ export default function AdminPage() {
   const [originalCoach, setOriginalCoach] = useState('');
   const [originalRosterJson, setOriginalRosterJson] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Custom Matchup Form States
+  const [customTeamAId, setCustomTeamAId] = useState('');
+  const [customTeamBId, setCustomTeamBId] = useState('');
+  const [customTeamAName, setCustomTeamAName] = useState('');
+  const [customTeamBName, setCustomTeamBName] = useState('');
+  const [customStartTime, setCustomStartTime] = useState('');
+  const [creatingCustom, setCreatingCustom] = useState(false);
+
+  // Custom Settle Form States
+  const [settleMatchupId, setSettleMatchupId] = useState('');
+  const [settleScoreA, setSettleScoreA] = useState('');
+  const [settleScoreB, setSettleScoreB] = useState('');
+  const [settleWinnerType, setSettleWinnerType] = useState<'teamA' | 'teamB'>('teamA');
+  const [settlingCustom, setSettlingCustom] = useState(false);
 
   // Playoff state
   const [playoffMatchups, setPlayoffMatchups] = useState<any[]>([]);
@@ -102,6 +117,79 @@ export default function AdminPage() {
       toast.error(err.message || 'Error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateCustomMatchup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customStartTime) {
+      toast.error(locale === 'en' ? 'Please select match start time' : 'Vui lòng chọn thời gian bắt đầu trận đấu');
+      return;
+    }
+
+    setCreatingCustom(true);
+    try {
+      const res = await fetch('/api/admin/regular/custom-matchup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teamAId: customTeamAId || null,
+          teamBId: customTeamBId || null,
+          customTeamA: customTeamAName,
+          customTeamB: customTeamBName,
+          startTime: customStartTime,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Create custom matchup failed');
+
+      toast.success('🎉 Created custom matchup successfully!');
+      setCustomTeamAId('');
+      setCustomTeamBId('');
+      setCustomTeamAName('');
+      setCustomTeamBName('');
+      setCustomStartTime('');
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setCreatingCustom(false);
+    }
+  };
+
+  const handleSettleCustomMatchup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settleMatchupId) {
+      toast.error(locale === 'en' ? 'Please select a custom matchup to settle' : 'Vui lòng chọn trận đấu tùy chỉnh để nhập kết quả');
+      return;
+    }
+
+    setSettlingCustom(true);
+    try {
+      const res = await fetch('/api/admin/regular/settle-custom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchupId: settleMatchupId,
+          scoreA: settleScoreA,
+          scoreB: settleScoreB,
+          winnerType: settleWinnerType,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Settle failed');
+
+      toast.success(data.message || '🏁 Settled matchup & points distributed!');
+      setSettleMatchupId('');
+      setSettleScoreA('');
+      setSettleScoreB('');
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSettlingCustom(false);
     }
   };
 
@@ -250,6 +338,7 @@ export default function AdminPage() {
   };
 
   const pendingApprovalsCount = teams.filter((t) => !t.isApproved || t.pendingData !== null).length;
+  const customMatchupsList = matchups.filter((m) => m.isCustom);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
@@ -265,7 +354,7 @@ export default function AdminPage() {
             ⚙️ ADMIN CONTROL DASHBOARD
           </h1>
           <p className="text-slate-400 text-sm mt-1 leading-normal break-words">
-            {locale === 'en' ? 'Manage 30 NBA teams, scrapers, roster edits & approvals, live matchups & user access' : 'Điều hành toàn bộ dữ liệu 30 đội bóng, Scraper, Sửa & Duyệt Roster, Matchups Live & Người Dùng'}
+            {locale === 'en' ? 'Manage 30 NBA teams, custom matchups, scrapers, roster approvals & live scoring' : 'Điều hành toàn bộ dữ liệu 30 đội bóng, Tạo Trận Đấu Tùy Chỉnh, Scraper, Sửa & Duyệt Roster & Người Dùng'}
           </p>
         </div>
         <button
@@ -313,7 +402,8 @@ export default function AdminPage() {
       <div className="flex overflow-x-auto space-x-2 border-b border-slate-800 pb-3 mb-8 scrollbar-none">
         {[
           { id: 'teams', label: locale === 'en' ? '🏀 Manage 30 NBA Teams' : '🏀 Quản Lý 30 Đội Bóng' },
-          { id: 'matchups', label: locale === 'en' ? '🗓️ Regular Matchups' : '🗓️ Regular Matchups' },
+          { id: 'custom', label: locale === 'en' ? '➕ Create Custom Matchup' : '➕ Tự Tạo Matchup' },
+          { id: 'matchups', label: locale === 'en' ? '🗓️ Scraped Matchups' : '🗓️ Matchups Tự Động' },
           { id: 'users', label: locale === 'en' ? '👥 Users & Access' : '👥 Người Dùng & Quyền' },
           { id: 'leaderboard', label: locale === 'en' ? '📊 Standings' : '📊 Bảng Điểm Regular' },
           { id: 'logs', label: locale === 'en' ? '📜 System Log Stream' : '📜 Nhật Ký System Logs' },
@@ -401,7 +491,6 @@ export default function AdminPage() {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Action Buttons Header */}
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() => handleScrapeRoster(selectedTeam.id)}
@@ -424,7 +513,6 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  {/* Roster Edit Form */}
                   <div className={`p-5 rounded-2xl border ${
                     selectedTeam.isApproved && !selectedTeam.pendingData
                       ? 'bg-emerald-950/20 border-emerald-500/40'
@@ -470,7 +558,222 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 2: MATCHUPS */}
+      {/* TAB 2: CREATE CUSTOM MATCHUP */}
+      {activeTab === 'custom' && (
+        <div className="space-y-8">
+          {/* Create Custom Form */}
+          <form onSubmit={handleCreateCustomMatchup} className="glass-card p-8 rounded-3xl border border-amber-500/40 shadow-2xl space-y-6">
+            <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
+              {t.customMatchupTitle}
+            </h2>
+            <p className="text-xs text-slate-400 leading-normal">
+              {locale === 'en'
+                ? 'Create a custom matchup between 2 existing NBA teams or 2 custom team names. Prediction lock time will be set EXACTLY at match start time.'
+                : 'Tự tạo trận đấu mới giữa 2 đội bóng có sẵn hoặc 2 đội tùy chỉnh. Khóa dự đoán ĐÚNG GIỜ BẮT ĐẦU TRẬN ĐẤU (không khóa trước 30m).'}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* TEAM A */}
+              <div className="space-y-3 p-4 bg-slate-950/80 rounded-2xl border border-slate-800">
+                <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
+                  🔴 Team A (Home)
+                </label>
+                <div>
+                  <span className="block text-[11px] text-slate-400 mb-1 font-semibold">Option 1: Choose from 30 NBA Teams</span>
+                  <select
+                    value={customTeamAId}
+                    onChange={(e) => {
+                      setCustomTeamAId(e.target.value);
+                      if (e.target.value) setCustomTeamAName('');
+                    }}
+                    className="w-full glass-input p-3 rounded-xl text-xs text-white font-bold"
+                  >
+                    <option value="" className="bg-slate-900">-- Select from 30 NBA Teams --</option>
+                    {teams.map((tm) => (
+                      <option key={tm.id} value={tm.id} className="bg-slate-900">
+                        {tm.name} ({tm.abbreviation})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!customTeamAId && (
+                  <div>
+                    <span className="block text-[11px] text-slate-400 mb-1 font-semibold">Option 2: Type Custom Team A Name</span>
+                    <input
+                      type="text"
+                      value={customTeamAName}
+                      onChange={(e) => setCustomTeamAName(e.target.value)}
+                      placeholder="e.g. All-Star East 2027"
+                      className="w-full glass-input p-3 rounded-xl text-xs font-bold"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* TEAM B */}
+              <div className="space-y-3 p-4 bg-slate-950/80 rounded-2xl border border-slate-800">
+                <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
+                  🔵 Team B (Away)
+                </label>
+                <div>
+                  <span className="block text-[11px] text-slate-400 mb-1 font-semibold">Option 1: Choose from 30 NBA Teams</span>
+                  <select
+                    value={customTeamBId}
+                    onChange={(e) => {
+                      setCustomTeamBId(e.target.value);
+                      if (e.target.value) setCustomTeamBName('');
+                    }}
+                    className="w-full glass-input p-3 rounded-xl text-xs text-white font-bold"
+                  >
+                    <option value="" className="bg-slate-900">-- Select from 30 NBA Teams --</option>
+                    {teams.map((tm) => (
+                      <option key={tm.id} value={tm.id} className="bg-slate-900">
+                        {tm.name} ({tm.abbreviation})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!customTeamBId && (
+                  <div>
+                    <span className="block text-[11px] text-slate-400 mb-1 font-semibold">Option 2: Type Custom Team B Name</span>
+                    <input
+                      type="text"
+                      value={customTeamBName}
+                      onChange={(e) => setCustomTeamBName(e.target.value)}
+                      placeholder="e.g. All-Star West 2027"
+                      className="w-full glass-input p-3 rounded-xl text-xs font-bold"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* START TIME */}
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                🗓️ Match Start Date & Time (GMT+7)
+              </label>
+              <input
+                type="datetime-local"
+                required
+                value={customStartTime}
+                onChange={(e) => setCustomStartTime(e.target.value)}
+                className="w-full glass-input p-3.5 rounded-2xl text-xs font-bold text-amber-400"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={creatingCustom}
+              className="w-full py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase shadow-xl hover:scale-[1.01] transition duration-300"
+            >
+              {creatingCustom ? 'CREATING...' : '➕ CREATE CUSTOM MATCHUP NOW →'}
+            </button>
+          </form>
+
+          {/* Settle Custom Matchups Form */}
+          <form onSubmit={handleSettleCustomMatchup} className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
+            <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
+              {t.settleCustomTitle}
+            </h2>
+            <p className="text-xs text-slate-400 leading-normal">
+              {locale === 'en'
+                ? 'Input final score & select winner for custom games. +1 point will be AUTOMATICALLY distributed to correct predictors.'
+                : 'Nhập tỉ số thực tế & chọn Đội Thắng. Hệ thống TỰ ĐỘNG PHÂN +1 ĐIỂM cho tất cả người đoán đúng.'}
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase mb-2">Select Unsettled Custom Matchup</label>
+              <select
+                value={settleMatchupId}
+                onChange={(e) => setSettleMatchupId(e.target.value)}
+                className="w-full glass-input p-3.5 rounded-2xl text-sm font-bold text-amber-400"
+              >
+                <option value="" className="bg-slate-900">-- Select custom matchup to settle --</option>
+                {customMatchupsList.map((m) => {
+                  const nameA = m.teamA ? m.teamA.name : m.customTeamA;
+                  const nameB = m.teamB ? m.teamB.name : m.customTeamB;
+                  return (
+                    <option key={m.id} value={m.id} className="bg-slate-900">
+                      #{m.id} - {nameA} vs {nameB} ({new Date(m.startTime).toLocaleDateString()}) [{m.isSettled ? 'FINISHED' : 'OPEN/LOCKED'}]
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {settleMatchupId && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Score Team A</label>
+                    <input
+                      type="number"
+                      required
+                      value={settleScoreA}
+                      onChange={(e) => setSettleScoreA(e.target.value)}
+                      placeholder="108"
+                      className="w-full glass-input p-3 rounded-xl text-sm font-bold text-amber-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Score Team B</label>
+                    <input
+                      type="number"
+                      required
+                      value={settleScoreB}
+                      onChange={(e) => setSettleScoreB(e.target.value)}
+                      placeholder="102"
+                      className="w-full glass-input p-3 rounded-xl text-sm font-bold text-amber-400"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase mb-2">Select Winning Team</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setSettleWinnerType('teamA')}
+                      className={`p-3.5 rounded-2xl border text-xs font-black uppercase transition ${
+                        settleWinnerType === 'teamA'
+                          ? 'border-amber-500 bg-amber-500/20 text-amber-400 shadow-lg'
+                          : 'border-slate-800 text-slate-400 hover:bg-slate-900'
+                      }`}
+                    >
+                      👑 Team A Winner
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSettleWinnerType('teamB')}
+                      className={`p-3.5 rounded-2xl border text-xs font-black uppercase transition ${
+                        settleWinnerType === 'teamB'
+                          ? 'border-amber-500 bg-amber-500/20 text-amber-400 shadow-lg'
+                          : 'border-slate-800 text-slate-400 hover:bg-slate-900'
+                      }`}
+                    >
+                      👑 Team B Winner
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={settlingCustom}
+                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs uppercase shadow-xl hover:scale-[1.01] transition duration-300"
+                >
+                  {settlingCustom ? 'SETTLING...' : '🏁 SETTLE MATCHUP & AUTO-DISTRIBUTE +1 POINT →'}
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      )}
+
+      {/* TAB 3: MATCHUPS (SCRAPED) */}
       {activeTab === 'matchups' && (
         <div className="space-y-6">
           <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -508,37 +811,45 @@ export default function AdminPage() {
                     <th className="p-4 leading-normal">ID</th>
                     <th className="p-4 leading-normal">Matchup</th>
                     <th className="p-4 leading-normal">Time (GMT+7)</th>
+                    <th className="p-4 leading-normal">Type</th>
                     <th className="p-4 leading-normal">Status</th>
                     <th className="p-4 leading-normal">Actual Score</th>
-                    <th className="p-4 leading-normal">Lock (-30m)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {matchups.map((m) => (
-                    <tr key={m.id} className="hover:bg-slate-800/40 transition">
-                      <td className="p-4 font-mono text-xs text-slate-500">#{m.id}</td>
-                      <td className="p-4 font-bold text-white leading-normal break-words">
-                        {m.teamA.name} vs {m.teamB.name}
-                      </td>
-                      <td className="p-4 text-xs text-slate-400 leading-normal">
-                        {new Date(m.startTime).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
-                      </td>
-                      <td className="p-4 text-xs">
-                        <span className={`px-2.5 py-1 rounded-full font-bold leading-normal ${
-                          m.status === 'FINISHED' ? 'bg-emerald-500/20 text-emerald-400' :
-                          m.status === 'IN_PROGRESS' ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-slate-800 text-slate-400'
-                        }`}>
-                          {m.status}
-                        </span>
-                      </td>
-                      <td className="p-4 font-mono font-black text-amber-400">
-                        {m.actualScore || (m.scoreA !== null ? `${m.scoreA} - ${m.scoreB}` : '-')}
-                      </td>
-                      <td className="p-4 text-xs text-slate-400 font-mono">
-                        {new Date(m.lockTime).toLocaleTimeString(locale === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}
-                      </td>
-                    </tr>
-                  ))}
+                  {matchups.map((m) => {
+                    const nameA = m.teamA ? m.teamA.name : m.customTeamA;
+                    const nameB = m.teamB ? m.teamB.name : m.customTeamB;
+                    return (
+                      <tr key={m.id} className="hover:bg-slate-800/40 transition">
+                        <td className="p-4 font-mono text-xs text-slate-500">#{m.id}</td>
+                        <td className="p-4 font-bold text-white leading-normal break-words">
+                          {nameA} vs {nameB}
+                        </td>
+                        <td className="p-4 text-xs text-slate-400 leading-normal">
+                          {new Date(m.startTime).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
+                        </td>
+                        <td className="p-4 text-xs">
+                          {m.isCustom ? (
+                            <span className="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold">CUSTOM</span>
+                          ) : (
+                            <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-bold">NBA AUTO</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs">
+                          <span className={`px-2.5 py-1 rounded-full font-bold leading-normal ${
+                            m.status === 'FINISHED' ? 'bg-emerald-500/20 text-emerald-400' :
+                            m.status === 'IN_PROGRESS' ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {m.status}
+                          </span>
+                        </td>
+                        <td className="p-4 font-mono font-black text-amber-400">
+                          {m.actualScore || (m.scoreA !== null ? `${m.scoreA} - ${m.scoreB}` : '-')}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -546,7 +857,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 3: USERS */}
+      {/* TAB 4: USERS */}
       {activeTab === 'users' && (
         <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
           <table className="w-full text-left text-sm text-slate-300">
@@ -597,7 +908,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 4: LEADERBOARD */}
+      {/* TAB 5: LEADERBOARD */}
       {activeTab === 'leaderboard' && (
         <div className="glass-card p-6 rounded-3xl border border-white/10">
           <h2 className="text-lg font-black text-white mb-4 leading-normal">
@@ -630,7 +941,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 5: LOGS */}
+      {/* TAB 6: LOGS */}
       {activeTab === 'logs' && (
         <div className="glass-card p-6 rounded-3xl border border-white/10">
           <h2 className="text-lg font-black text-white mb-4 leading-normal">📜 System Log Stream</h2>
@@ -652,7 +963,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 6: PLAYOFF ADMIN */}
+      {/* TAB 7: PLAYOFF ADMIN */}
       {activeTab === 'playoff' && (
         <div className="glass-card p-8 rounded-3xl border border-white/10 space-y-6">
           <h2 className="text-lg font-black text-white leading-normal">🏆 Playoff Admin Controls</h2>

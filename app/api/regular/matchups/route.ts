@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
             id: true,
             userId: true,
             predictedWinnerId: true,
+            customPredictedWinner: true,
           },
         },
       },
@@ -47,9 +48,31 @@ export async function GET(req: NextRequest) {
     });
 
     const formattedMatchups = matchups.map((m) => {
+      const teamAObj = m.teamA || {
+        id: -1,
+        name: m.customTeamA || 'Team A',
+        abbreviation: 'CUST',
+        logo: m.customLogoA || 'https://a.espncdn.com/i/teamlogos/nba/500/nba.png',
+      };
+
+      const teamBObj = m.teamB || {
+        id: -2,
+        name: m.customTeamB || 'Team B',
+        abbreviation: 'CUST',
+        logo: m.customLogoB || 'https://a.espncdn.com/i/teamlogos/nba/500/nba.png',
+      };
+
       const totalPredictions = m.predictions.length;
-      const votesTeamA = m.predictions.filter((p) => p.predictedWinnerId === m.teamAId).length;
-      const votesTeamB = m.predictions.filter((p) => p.predictedWinnerId === m.teamBId).length;
+      let votesTeamA = 0;
+      let votesTeamB = 0;
+
+      m.predictions.forEach((p) => {
+        if (p.predictedWinnerId === m.teamAId || (m.isCustom && p.customPredictedWinner === teamAObj.name)) {
+          votesTeamA++;
+        } else {
+          votesTeamB++;
+        }
+      });
 
       const percentTeamA = totalPredictions > 0 ? Math.round((votesTeamA / totalPredictions) * 100) : 50;
       const percentTeamB = totalPredictions > 0 ? Math.round((votesTeamB / totalPredictions) * 100) : 50;
@@ -61,15 +84,16 @@ export async function GET(req: NextRequest) {
       return {
         id: m.id,
         espnId: m.espnId,
-        teamA: m.teamA,
-        teamB: m.teamB,
+        isCustom: m.isCustom,
+        teamA: teamAObj,
+        teamB: teamBObj,
         startTime: m.startTime,
         status: m.status,
         clock: m.clock,
         period: m.period,
         scoreA: m.scoreA,
         scoreB: m.scoreB,
-        actualWinner: m.actualWinner,
+        actualWinner: m.actualWinner || (m.customWinner ? { name: m.customWinner } : null),
         actualScore: m.actualScore,
         lockTime: m.lockTime,
         openTime: m.openTime,
@@ -82,6 +106,7 @@ export async function GET(req: NextRequest) {
           ? {
               id: userPrediction.id,
               predictedWinnerId: userPrediction.predictedWinnerId,
+              customPredictedWinner: userPrediction.customPredictedWinner,
             }
           : null,
       };

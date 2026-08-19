@@ -44,13 +44,20 @@ export default function RegularSeasonPage() {
     fetchMatchups(selectedDaysAhead);
   }, [selectedDaysAhead, locale]);
 
-  const handlePredict = async (matchupId: number, predictedWinnerId: number) => {
-    setPredictingId(matchupId);
+  const handlePredict = async (matchup: any, winnerObj: any) => {
+    setPredictingId(matchup.id);
     try {
+      const payload: any = { matchupId: matchup.id };
+      if (winnerObj.id > 0) {
+        payload.predictedWinnerId = winnerObj.id;
+      } else {
+        payload.customPredictedWinner = winnerObj.name;
+      }
+
       const res = await fetch('/api/regular/predictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchupId, predictedWinnerId }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -70,7 +77,7 @@ export default function RegularSeasonPage() {
       {/* Hero Header */}
       <div className="text-center max-w-3xl mx-auto mb-10">
         <div className="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1 rounded-full text-xs font-black text-amber-400 uppercase tracking-widest mb-3">
-          <span>🏀 NBA 2025 REGULAR SEASON HUB</span>
+          <span>🏀 NBA 2026-27 REGULAR SEASON HUB</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-black gradient-text-gold tracking-tight uppercase leading-normal break-words">
           {t.regularTitle}
@@ -112,14 +119,30 @@ export default function RegularSeasonPage() {
           {matchups.map((m) => {
             const now = new Date();
             const lock = new Date(m.lockTime);
-            const open = new Date(m.openTime);
-            const canPredict = m.status === 'SCHEDULED' && now >= open && now < lock;
+            const canPredict = m.status === 'SCHEDULED' && now < lock;
+
+            const isVotedA =
+              m.userPrediction &&
+              (m.userPrediction.predictedWinnerId === m.teamA.id ||
+                m.userPrediction.customPredictedWinner === m.teamA.name);
+
+            const isVotedB =
+              m.userPrediction &&
+              (m.userPrediction.predictedWinnerId === m.teamB.id ||
+                m.userPrediction.customPredictedWinner === m.teamB.name);
 
             return (
               <div
                 key={m.id}
-                className="glass-card p-6 md:p-8 rounded-3xl border border-white/10 flex flex-col justify-between space-y-6 hover:border-amber-500/30 transition-all duration-300 shadow-xl"
+                className="glass-card p-6 md:p-8 rounded-3xl border border-white/10 flex flex-col justify-between space-y-6 hover:border-amber-500/30 transition-all duration-300 shadow-xl relative overflow-hidden"
               >
+                {/* Custom Game Badge */}
+                {m.isCustom && (
+                  <div className="absolute top-0 right-0 bg-purple-600 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest">
+                    CUSTOM MATCH
+                  </div>
+                )}
+
                 {/* Header Status Bar */}
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
                   <span className="text-xs font-mono text-slate-400 font-semibold leading-normal">
@@ -147,16 +170,30 @@ export default function RegularSeasonPage() {
                 <div className="grid grid-cols-5 items-center text-center my-2">
                   {/* Team A */}
                   <div className="col-span-2 flex flex-col items-center">
-                    <Link href={`/team/${m.teamA.id}`} className="group flex flex-col items-center">
-                      <img
-                        src={m.teamA.logo}
-                        alt={m.teamA.name}
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain group-hover:scale-110 transition drop-shadow-xl"
-                      />
-                      <span className="mt-2 text-sm sm:text-base font-black text-white dark:text-white light:text-slate-900 group-hover:text-amber-400 transition leading-normal break-words">
-                        {m.teamA.name}
-                      </span>
-                    </Link>
+                    {m.teamA.id > 0 ? (
+                      <Link href={`/team/${m.teamA.id}`} className="group flex flex-col items-center">
+                        <img
+                          src={m.teamA.logo}
+                          alt={m.teamA.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain group-hover:scale-110 transition drop-shadow-xl"
+                        />
+                        <span className="mt-2 text-sm sm:text-base font-black text-white group-hover:text-amber-400 transition leading-normal break-words">
+                          {m.teamA.name}
+                        </span>
+                      </Link>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <img
+                          src={m.teamA.logo}
+                          alt={m.teamA.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-xl"
+                        />
+                        <span className="mt-2 text-sm sm:text-base font-black text-white leading-normal break-words">
+                          {m.teamA.name}
+                        </span>
+                      </div>
+                    )}
+
                     {m.scoreA !== null && (
                       <span className="text-2xl font-black text-amber-400 mt-1 font-mono">{m.scoreA}</span>
                     )}
@@ -169,16 +206,30 @@ export default function RegularSeasonPage() {
 
                   {/* Team B */}
                   <div className="col-span-2 flex flex-col items-center">
-                    <Link href={`/team/${m.teamB.id}`} className="group flex flex-col items-center">
-                      <img
-                        src={m.teamB.logo}
-                        alt={m.teamB.name}
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain group-hover:scale-110 transition drop-shadow-xl"
-                      />
-                      <span className="mt-2 text-sm sm:text-base font-black text-white dark:text-white light:text-slate-900 group-hover:text-amber-400 transition leading-normal break-words">
-                        {m.teamB.name}
-                      </span>
-                    </Link>
+                    {m.teamB.id > 0 ? (
+                      <Link href={`/team/${m.teamB.id}`} className="group flex flex-col items-center">
+                        <img
+                          src={m.teamB.logo}
+                          alt={m.teamB.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain group-hover:scale-110 transition drop-shadow-xl"
+                        />
+                        <span className="mt-2 text-sm sm:text-base font-black text-white group-hover:text-amber-400 transition leading-normal break-words">
+                          {m.teamB.name}
+                        </span>
+                      </Link>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <img
+                          src={m.teamB.logo}
+                          alt={m.teamB.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-xl"
+                        />
+                        <span className="mt-2 text-sm sm:text-base font-black text-white leading-normal break-words">
+                          {m.teamB.name}
+                        </span>
+                      </div>
+                    )}
+
                     {m.scoreB !== null && (
                       <span className="text-2xl font-black text-amber-400 mt-1 font-mono">{m.scoreB}</span>
                     )}
@@ -203,34 +254,34 @@ export default function RegularSeasonPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         disabled={predictingId === m.id}
-                        onClick={() => handlePredict(m.id, m.teamA.id)}
+                        onClick={() => handlePredict(m, m.teamA)}
                         className={`py-3 px-3 rounded-2xl font-extrabold text-xs transition flex flex-col items-center leading-normal ${
-                          m.userPrediction?.predictedWinnerId === m.teamA.id
+                          isVotedA
                             ? 'bg-amber-500 text-slate-950 shadow-lg'
                             : 'bg-slate-800 text-slate-200 hover:bg-amber-500/20 hover:text-amber-300 border border-slate-700'
                         }`}
                       >
-                        <span>{m.userPrediction?.predictedWinnerId === m.teamA.id ? `✓ ${t.voted}` : t.voteFor}</span>
+                        <span>{isVotedA ? `✓ ${t.voted}` : t.voteFor}</span>
                         <span className="text-[10px] opacity-80 break-words line-clamp-1">{m.teamA.name}</span>
                       </button>
 
                       <button
                         disabled={predictingId === m.id}
-                        onClick={() => handlePredict(m.id, m.teamB.id)}
+                        onClick={() => handlePredict(m, m.teamB)}
                         className={`py-3 px-3 rounded-2xl font-extrabold text-xs transition flex flex-col items-center leading-normal ${
-                          m.userPrediction?.predictedWinnerId === m.teamB.id
+                          isVotedB
                             ? 'bg-blue-500 text-white shadow-lg'
                             : 'bg-slate-800 text-slate-200 hover:bg-blue-500/20 hover:text-blue-300 border border-slate-700'
                         }`}
                       >
-                        <span>{m.userPrediction?.predictedWinnerId === m.teamB.id ? `✓ ${t.voted}` : t.voteFor}</span>
+                        <span>{isVotedB ? `✓ ${t.voted}` : t.voteFor}</span>
                         <span className="text-[10px] opacity-80 break-words line-clamp-1">{m.teamB.name}</span>
                       </button>
                     </div>
                   ) : (
                     <div className="text-center py-3 bg-slate-900/60 rounded-2xl text-slate-400 text-xs font-semibold leading-normal break-words">
                       {m.userPrediction
-                        ? `${t.voted}: ${m.userPrediction.predictedWinnerId === m.teamA.id ? m.teamA.name : m.teamB.name}`
+                        ? `${t.voted}: ${isVotedA ? m.teamA.name : m.teamB.name}`
                         : t.predictLocked}
                     </div>
                   )}
