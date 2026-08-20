@@ -29,6 +29,7 @@ export async function middleware(request: NextRequest) {
     pathname === '/' ||
     pathname === '/auth' ||
     pathname.startsWith('/api/auth') ||
+    pathname === '/api/cron/live-sync' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/logos') ||
     pathname === '/favicon.ico';
