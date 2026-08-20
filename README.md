@@ -9,7 +9,7 @@ Next.js app for NBA regular-season/team-winner predictions, playoff predictions,
 - PostgreSQL for production
 - JWT auth
 - Nodemailer SMTP email verification
-- Vercel Cron for NBA schedule/live-score sync
+- External cron or manual admin sync for NBA schedule/live-score sync
 
 ## Local Setup
 
@@ -81,14 +81,25 @@ npm run db:seed
 
 You can run those locally with the production `DATABASE_URL`, or from a trusted CI/admin shell.
 
-### Cron
+### Schedule Sync
 
-`vercel.json` schedules `/api/cron/live-sync` every 10 minutes.
+Vercel Hobby only allows daily cron jobs, so this repo does not register Vercel Cron by default.
 
-The endpoint accepts either:
+For frequent sync, use an external cron service to call:
 
-- `Authorization: Bearer $CRON_SECRET` for Vercel Cron
-- an authenticated admin session for the in-app admin sync button
+```text
+https://YOUR_VERCEL_DOMAIN/api/cron/live-sync
+```
+
+with this header:
+
+```text
+Authorization: Bearer YOUR_CRON_SECRET
+```
+
+The endpoint also accepts an authenticated admin session, so admins can still trigger sync from the app.
+
+If you upgrade to Vercel Pro later, you can add a `vercel.json` cron schedule for this endpoint.
 
 ## Manual Work Still Needed
 
