@@ -363,24 +363,31 @@ export default function SettingsPage() {
             <div className="space-y-4">
               {historyList.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.type}-${item.id}`}
                   className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 hover:border-amber-500/30 transition"
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      {item.teamALogo && <img src={item.teamALogo} alt={item.teamAName} className="w-8 h-8 object-contain" />}
-                      <span className="text-xs font-black text-white">{item.teamAName}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        {item.teamALogo && <img src={item.teamALogo} alt={item.teamAName} className="w-8 h-8 object-contain" />}
+                        <span className="text-xs font-black text-white">{item.teamAName}</span>
+                      </div>
+                      <span className="text-xs font-black text-slate-600">VS</span>
+                      <div className="flex items-center space-x-2">
+                        {item.teamBLogo && <img src={item.teamBLogo} alt={item.teamBName} className="w-8 h-8 object-contain" />}
+                        <span className="text-xs font-black text-white">{item.teamBName}</span>
+                      </div>
                     </div>
-                    <span className="text-xs font-black text-slate-600">VS</span>
-                    <div className="flex items-center space-x-2">
-                      {item.teamBLogo && <img src={item.teamBLogo} alt={item.teamBName} className="w-8 h-8 object-contain" />}
-                      <span className="text-xs font-black text-white">{item.teamBName}</span>
-                    </div>
+                    {item.type === 'PROP_YES_NO' && (
+                      <p className="text-[11px] text-slate-400 font-semibold leading-normal max-w-sm">
+                        YES/NO: <span className="text-slate-200">{item.question}</span>
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 text-xs">
                     <span className="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl font-semibold">
-                      🗳️ Picked: <strong className="text-amber-400">{item.myPick}</strong>
+                      🗳️ {item.type === 'PROP_YES_NO' ? 'Vote' : 'Picked'}: <strong className="text-amber-400">{item.myPick}</strong>
                     </span>
 
                     {item.isSettled ? (
@@ -396,6 +403,12 @@ export default function SettingsPage() {
                     ) : (
                       <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-xl font-bold uppercase">
                         ⏳ PENDING
+                      </span>
+                    )}
+
+                    {item.type === 'PROP_YES_NO' && item.resolvedOutcome && (
+                      <span className="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl font-semibold">
+                        Result: <strong className="text-white">{item.resolvedOutcome}</strong>
                       </span>
                     )}
 

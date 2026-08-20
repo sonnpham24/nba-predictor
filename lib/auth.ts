@@ -8,8 +8,11 @@ export interface JwtPayload {
 }
 
 function getSecretKey(): Uint8Array {
-  const secret = process.env.JWT_SECRET || 'fallback-secret-key';
-  return new TextEncoder().encode(secret);
+  const secret = process.env.JWT_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET is required in production');
+  }
+  return new TextEncoder().encode(secret || 'dev-only-fallback-secret-key');
 }
 
 export async function createJwtToken(payload: JwtPayload, expiresIn = '7d'): Promise<string> {

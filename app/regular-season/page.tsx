@@ -72,7 +72,7 @@ export default function RegularSeasonPage() {
   const fetchMatchups = async (dateStr: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/regular/matchups?date=${dateStr}`);
+      const res = await fetch(`/api/regular/matchups?date=${dateStr}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(locale === 'en' ? 'Failed to load matchups' : 'Lỗi tải danh sách trận đấu');
       const data = await res.json();
 
@@ -118,6 +118,32 @@ export default function RegularSeasonPage() {
       if (!res.ok) throw new Error(data.error || (locale === 'en' ? 'Prediction failed' : 'Dự đoán thất bại'));
 
       toast.success(data.message || (locale === 'en' ? '✅ Prediction saved!' : '✅ Đã lưu dự đoán thành công!'));
+      setMatchups((prev) =>
+        prev.map((item) => {
+          if (item.id !== matchup.id) return item;
+
+          const votedTeamA = winnerObj.id === item.teamA.id || winnerObj.name === item.teamA.name;
+          const votesTeamA = item.votesTeamA + (votedTeamA ? 1 : 0);
+          const votesTeamB = item.votesTeamB + (votedTeamA ? 0 : 1);
+          const totalPredictions = votesTeamA + votesTeamB;
+          const percentTeamA = totalPredictions > 0 ? Math.round((votesTeamA / totalPredictions) * 100) : 50;
+          const percentTeamB = totalPredictions > 0 ? 100 - percentTeamA : 50;
+
+          return {
+            ...item,
+            userPrediction: {
+              id: data.prediction.id,
+              predictedWinnerId: data.prediction.predictedWinnerId,
+              customPredictedWinner: data.prediction.customPredictedWinner,
+            },
+            totalPredictions,
+            votesTeamA,
+            votesTeamB,
+            percentTeamA,
+            percentTeamB,
+          };
+        })
+      );
       const currentItem = datesList.find((d) => d.daysAhead === selectedDaysAhead) || datesList[0];
       fetchMatchups(currentItem.dateStr);
     } catch (err: any) {
@@ -172,9 +198,9 @@ export default function RegularSeasonPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {matchups.map((m) => {
-            const now = new Date();
-            const lock = new Date(m.lockTime);
-            const canPredict = m.status === 'SCHEDULED' && now < lock;
+            const canPredict = Boolean(m.canPredict && !m.userPrediction);
+            const predictionOpen = Boolean(m.canPredict);
+            const displayStatus = m.displayStatus || m.status;
 
             const isVotedA =
               m.userPrediction &&
@@ -210,19 +236,23 @@ export default function RegularSeasonPage() {
                     </span>
 
                     {/* COUNTDOWN TIMER FOR UPCOMING GAMES */}
-                    {canPredict && (
+                    {predictionOpen && (
                       <MatchCountdown startTime={m.startTime} />
                     )}
                   </div>
 
                   <div>
-                    {m.status === 'FINISHED' ? (
+                    {displayStatus === 'FINISHED' ? (
                       <span className="px-3 py-1 bg-slate-800 text-slate-400 rounded-full text-xs font-black uppercase tracking-wider">
                         {t.finished}
                       </span>
-                    ) : m.status === 'IN_PROGRESS' ? (
+                    ) : displayStatus === 'IN_PROGRESS' ? (
                       <span className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-xs font-black uppercase tracking-wider animate-pulse-glow">
                         🔴 {t.live} {m.period}
+                      </span>
+                    ) : displayStatus === 'LOCKED' ? (
+                      <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-xs font-black uppercase tracking-wider">
+                        {t.predictLocked}
                       </span>
                     ) : (
                       <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-black uppercase tracking-wider">

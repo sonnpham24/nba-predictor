@@ -8,7 +8,10 @@ export async function middleware(request: NextRequest) {
   let isValidUser = false;
   if (token) {
     try {
-      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret');
+      if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_SECRET is required in production');
+      }
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-only-fallback-secret-key');
       await jwtVerify(token, secret);
       isValidUser = true;
     } catch {

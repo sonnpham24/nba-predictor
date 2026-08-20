@@ -1,18 +1,31 @@
 import nodemailer from 'nodemailer';
 import { logSystemEvent } from '@/lib/logger';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE === 'true' || true,
-  auth: {
-    user: process.env.SMTP_USER || 'vnbrayvn@gmail.com',
-    pass: (process.env.SMTP_PASS || 'rcekyujngsjngiai').replace(/\s+/g, ''),
-  },
-});
+function getMailerConfig() {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.SMTP_PORT || '465', 10);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS?.replace(/\s+/g, '');
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : port === 465;
+
+  if (!user || !pass) {
+    throw new Error('SMTP_USER and SMTP_PASS are required to send email');
+  }
+
+  return {
+    host,
+    port,
+    secure,
+    auth: {
+      user,
+      pass,
+    },
+  };
+}
 
 export async function sendOtpEmail(toEmail: string, otpCode: string, username: string) {
   try {
+    const transporter = nodemailer.createTransport(getMailerConfig());
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 580px; margin: 0 auto; background-color: #07090e; color: #ffffff; border-radius: 20px; padding: 40px; border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -40,7 +53,7 @@ export async function sendOtpEmail(toEmail: string, otpCode: string, username: s
     `;
 
     const info = await transporter.sendMail({
-      from: `"NBA Predictor Hub 2026-27" <${process.env.SMTP_USER || 'vnbrayvn@gmail.com'}>`,
+      from: process.env.SMTP_FROM || `"NBA Predictor Hub 2026-27" <${process.env.SMTP_USER}>`,
       to: toEmail,
       subject: `🏀 [${otpCode}] Mã xác thực OTP tài khoản NBA Predictor 2026-27`,
       html: htmlContent,

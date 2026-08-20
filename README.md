@@ -1,77 +1,109 @@
-# 🏀 NBA Playoff Predictor 2025
+# NBA Predictor
 
-Dự án web giúp người chơi dự đoán kết quả các vòng đấu trong NBA Playoffs 2025.  
-Điểm số sẽ được tính dựa trên độ chính xác của dự đoán.
+Next.js app for NBA regular-season/team-winner predictions, playoff predictions, Yes/No prop bets, leaderboards, admin sync, and user profiles.
 
----
+## Stack
 
-## 🚀 Tính năng nổi bật
+- Next.js App Router
+- Prisma
+- PostgreSQL for production
+- JWT auth
+- Nodemailer SMTP email verification
+- Vercel Cron for NBA schedule/live-score sync
 
-- Đăng ký / Đăng nhập tài khoản người dùng
-- Dự đoán đội thắng và tỷ số từng cặp đấu
-- Bảng xếp hạng điểm số theo người chơi
-- Thống kê toàn giải: độ chính xác, biểu đồ, trận nào nhiều người đoán đúng
-- Trang quản trị (Admin) để:
-  - Cập nhật kết quả thật từng trận
-  - Đặt deadline (lockTime) từng trận
-  - Tạo vòng đấu tiếp theo
-- Thông báo khi có kết quả mới (toasts)
-- Responsive cho mobile & desktop
+## Local Setup
 
----
+1. Install dependencies:
 
-## 💡 Cách tính điểm
-
-- ✅ Đúng đội & đúng tỷ số: `3 điểm`
-- ✅ Đúng đội, lệch đúng 1 trận: `2 điểm`
-- ✅ Đúng đội, lệch >1 trận: `1 điểm`
-- ❌ Sai đội: `0 điểm`
-
----
-
-## 🛠️ Công nghệ sử dụng
-
-- **Next.js 14** (App Router)
-- **Tailwind CSS** + `shadcn/ui` cho UI
-- **Prisma + SQLite** (hoặc PostgreSQL) cho DB
-- **JWT** để xác thực người dùng
-- **Vercel** để deploy
-- `recharts` để hiển thị biểu đồ thống kê
-
----
-
-## ⚙️ Cài đặt local
-git clone https://github.com/your-username/nba-predictor.git
-cd nba-predictor
+```bash
 npm install
-npx prisma migrate dev --name init
-npx prisma db seed
+```
+
+2. Create `.env` from `.env.example` and set at least:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+JWT_SECRET="replace-with-a-long-random-secret"
+CRON_SECRET="replace-with-a-long-random-cron-secret"
+ADMIN_PASSWORD="replace-with-a-strong-admin-password"
+```
+
+3. Generate Prisma client and apply migrations:
+
+```bash
+npm run db:generate
+npm run db:migrate:deploy
+npm run db:seed
+```
+
+4. Start development server:
+
+```bash
 npm run dev
+```
 
-- Tạo file .env với nội dung:
+## Production Deploy: Vercel + Managed Postgres
 
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your-secret"
+Use a managed Postgres database such as Supabase, Neon, Railway, Render, or Vercel Postgres.
 
-- Tài khoản mặc định
+### Required Environment Variables
 
-Username: admin
-Password: admin123
+Set these in Vercel Project Settings:
 
-- Deploy trên Vercel
-Import repo từ GitHub vào https://vercel.com
-Set biến môi trường:
-
+```bash
 DATABASE_URL
 JWT_SECRET
+CRON_SECRET
+SMTP_HOST
+SMTP_PORT
+SMTP_SECURE
+SMTP_USER
+SMTP_PASS
+SMTP_FROM
+ADMIN_USERNAME
+ADMIN_PASSWORD
+ADMIN_EMAIL
+LOCAL_AVATAR_UPLOADS_ENABLED=false
+```
 
-Click Deploy
+### Deploy Steps
 
-- Demo
-(Cập nhật sau khi deploy)
-nba-predictor.vercel.app
+1. Push this repo to GitHub.
+2. Import the repo in Vercel.
+3. Add environment variables from `.env.example`.
+4. Deploy.
+5. Run database setup once against production:
 
-- Liên hệ
-Dev: Son Pham (phamcongson297@gmail.com)
+```bash
+npm run db:migrate:deploy
+npm run db:seed
+```
 
-Dự án cá nhân, phi thương mại
+You can run those locally with the production `DATABASE_URL`, or from a trusted CI/admin shell.
+
+### Cron
+
+`vercel.json` schedules `/api/cron/live-sync` every 10 minutes.
+
+The endpoint accepts either:
+
+- `Authorization: Bearer $CRON_SECRET` for Vercel Cron
+- an authenticated admin session for the in-app admin sync button
+
+## Manual Work Still Needed
+
+Avatar uploads currently use local filesystem storage for development. That is not durable on Vercel, so production upload is disabled unless `LOCAL_AVATAR_UPLOADS_ENABLED=true`.
+
+For real production avatars, wire one of:
+
+- Supabase Storage
+- Cloudflare R2
+- AWS S3
+
+Recommended next step: Supabase Storage if you also use Supabase Postgres.
+
+## Notes
+
+- SQLite migrations were replaced with a PostgreSQL baseline migration for production deploy.
+- If you still want SQLite local development, keep it on a separate branch or maintain a separate Prisma schema.
+- Do not use the default admin password in production. Set `ADMIN_PASSWORD` before running `npm run db:seed`.

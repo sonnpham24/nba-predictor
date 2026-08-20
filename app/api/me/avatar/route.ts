@@ -11,6 +11,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
 
+    if (process.env.NODE_ENV === 'production' && process.env.LOCAL_AVATAR_UPLOADS_ENABLED !== 'true') {
+      return NextResponse.json(
+        { error: 'Avatar upload cần cấu hình storage ngoài (Supabase Storage, S3 hoặc Cloudflare R2) trên production.' },
+        { status: 501 }
+      );
+    }
+
     const formData = await req.formData();
     const file = (formData.get('file') || formData.get('avatar')) as File | null;
 

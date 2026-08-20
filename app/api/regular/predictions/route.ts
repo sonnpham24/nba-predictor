@@ -60,6 +60,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Đã hết thời gian dự đoán (trận đấu đã bắt đầu hoặc đã khóa)' }, { status: 400 });
     }
 
+    const existing = await prisma.regularPrediction.findUnique({
+      where: {
+        userId_matchupId: {
+          userId: user.id,
+          matchupId: mId,
+        },
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json({ error: 'Bạn đã dự đoán trận này rồi, không thể thay đổi lựa chọn.' }, { status: 409 });
+    }
+
     let pWinId: number | null = predictedWinnerId ? parseInt(predictedWinnerId) : null;
     let cWinName: string | null = customPredictedWinner ? String(customPredictedWinner).trim() : null;
 
@@ -75,18 +88,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const prediction = await prisma.regularPrediction.upsert({
-      where: {
-        userId_matchupId: {
-          userId: user.id,
-          matchupId: mId,
-        },
-      },
-      update: {
-        predictedWinnerId: pWinId,
-        customPredictedWinner: cWinName,
-      },
-      create: {
+    const validTeamPick =
+      (pWinId !== null && (pWinId === matchup.teamAId || pWinId === matchup.teamBId)) ||
+      (cWinName !== null && (cWinName === matchup.customTeamA || cWinName === matchup.customTeamB));
+
+    if (!validTeamPick) {
+      return NextResponse.json({ error: 'Đội dự đoán không hợp lệ cho trận đấu này' }, { status: 400 });
+    }
+
+    const prediction = await prisma.regularPrediction.create({
+      data: {
         userId: user.id,
         matchupId: mId,
         predictedWinnerId: pWinId,

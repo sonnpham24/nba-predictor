@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/auth';
+import {
+  calculateRegularVoteSplit,
+  getRegularDisplayStatus,
+  isRegularPredictionWindowOpen,
+} from '@/lib/regularMatchupUtils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,20 +52,23 @@ export async function GET(req: NextRequest) {
       logo: m.customLogoB || 'https://a.espncdn.com/i/teamlogos/nba/500/nba.png',
     };
 
-    const totalPredictions = m.predictions.length;
-    let votesTeamA = 0;
-    let votesTeamB = 0;
-
-    m.predictions.forEach((p) => {
-      if (p.predictedWinnerId === m.teamAId || (m.isCustom && p.customPredictedWinner === teamAObj.name)) {
-        votesTeamA++;
-      } else {
-        votesTeamB++;
-      }
+    const voteSplit = calculateRegularVoteSplit(m.predictions, {
+      teamAId: m.teamAId,
+      teamBId: m.teamBId,
+      teamA: teamAObj,
+      teamB: teamBObj,
+      customTeamA: m.customTeamA,
+      customTeamB: m.customTeamB,
+      startTime: m.startTime,
+      lockTime: m.lockTime,
+      openTime: m.openTime,
+      status: m.status,
+      isSettled: m.isSettled,
     });
 
-    const percentTeamA = totalPredictions > 0 ? Math.round((votesTeamA / totalPredictions) * 100) : 50;
-    const percentTeamB = totalPredictions > 0 ? Math.round((votesTeamB / totalPredictions) * 100) : 50;
+    const now = new Date();
+    const displayStatus = getRegularDisplayStatus(m, now);
+    const canPredict = isRegularPredictionWindowOpen(m, now);
 
     const userPrediction = user
       ? m.predictions.find((p) => p.userId === user.id)
@@ -74,6 +82,9 @@ export async function GET(req: NextRequest) {
       teamB: teamBObj,
       startTime: m.startTime,
       status: m.status,
+      displayStatus,
+      isLocked: displayStatus === 'LOCKED' || displayStatus === 'IN_PROGRESS' || displayStatus === 'FINISHED',
+      canPredict,
       clock: m.clock,
       period: m.period,
       scoreA: m.scoreA,
@@ -82,11 +93,11 @@ export async function GET(req: NextRequest) {
       actualScore: m.actualScore,
       lockTime: m.lockTime,
       openTime: m.openTime,
-      totalPredictions,
-      votesTeamA,
-      votesTeamB,
-      percentTeamA,
-      percentTeamB,
+      totalPredictions: voteSplit.totalPredictions,
+      votesTeamA: voteSplit.votesTeamA,
+      votesTeamB: voteSplit.votesTeamB,
+      percentTeamA: voteSplit.percentTeamA,
+      percentTeamB: voteSplit.percentTeamB,
       userPrediction: userPrediction
         ? {
             id: userPrediction.id,

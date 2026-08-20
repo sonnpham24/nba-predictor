@@ -14,12 +14,9 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '5');
     const skip = (page - 1) * limit;
 
-    const [totalCount, predictions] = await Promise.all([
-      prisma.regularPrediction.count({ where: { userId: user.id } }),
+    const [regularPredictions, propVotes] = await Promise.all([
       prisma.regularPrediction.findMany({
         where: { userId: user.id },
-        skip,
-        take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
           matchup: {
@@ -31,9 +28,30 @@ export async function GET(req: NextRequest) {
           predictedWinner: true,
         },
       }),
+      prisma.propVote.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          prop: {
+            include: {
+              votes: {
+                select: {
+                  vote: true,
+                },
+              },
+              matchup: {
+                include: {
+                  teamA: true,
+                  teamB: true,
+                },
+              },
+            },
+          },
+        },
+      }),
     ]);
 
-    const formattedList = predictions.map((p) => {
+    const regularItems = regularPredictions.map((p) => {
       const m = p.matchup;
       const teamAName = m.teamA ? m.teamA.name : m.customTeamA || 'Team A';
       const teamBName = m.teamB ? m.teamB.name : m.customTeamB || 'Team B';
@@ -55,6 +73,7 @@ export async function GET(req: NextRequest) {
       }
 
       return {
+        type: 'TEAM_WINNER',
         id: p.id,
         createdAt: p.createdAt,
         matchupId: m.id,
@@ -72,10 +91,49 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    const propItems = propVotes.map((v) => {
+      const prop = v.prop;
+      const m = prop.matchup;
+      const teamAName = m.teamA ? m.teamA.name : m.customTeamA || 'Team A';
+      const teamBName = m.teamB ? m.teamB.name : m.customTeamB || 'Team B';
+      const teamALogo = m.teamA ? m.teamA.logo : m.customLogoA;
+      const teamBLogo = m.teamB ? m.teamB.logo : m.customLogoB;
+      const votesYes = prop.votes.filter((item) => item.vote === 'YES').length;
+      const votesNo = prop.votes.filter((item) => item.vote === 'NO').length;
+      const hasOppositeSide = votesYes > 0 && votesNo > 0;
+      const isCorrect = prop.isResolved ? v.vote === prop.resolvedOutcome : null;
+      const points = prop.isSettled && hasOppositeSide && isCorrect ? 1 : 0;
+
+      return {
+        type: 'PROP_YES_NO',
+        id: v.id,
+        createdAt: v.createdAt,
+        matchupId: m.id,
+        propId: prop.id,
+        teamAName,
+        teamBName,
+        teamALogo,
+        teamBLogo,
+        startTime: m.startTime,
+        status: m.status,
+        isSettled: prop.isSettled,
+        actualScore: m.actualScore,
+        question: prop.question,
+        myPick: v.vote,
+        resolvedOutcome: prop.resolvedOutcome,
+        isCorrect,
+        points,
+      };
+    });
+
+    const formattedList = [...regularItems, ...propItems]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const pagedList = formattedList.slice(skip, skip + limit);
+    const totalCount = formattedList.length;
     const totalPages = Math.ceil(totalCount / limit) || 1;
 
     return NextResponse.json({
-      predictions: formattedList,
+      predictions: pagedList,
       pagination: {
         page,
         limit,

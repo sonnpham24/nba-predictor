@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import { calculateLockTime, calculateOpenTime, isPredictionOpen } from '../lib/dateUtils';
+import { calculateRegularVoteSplit, getRegularDisplayStatus } from '../lib/regularMatchupUtils';
 
 function runRegularSeasonTests() {
   console.log('Running Regular Season & Scraper Tests...');
@@ -32,6 +33,37 @@ function runRegularSeasonTests() {
 
   assert.strictEqual(calculateRegularScore(10, 10), 1);
   assert.strictEqual(calculateRegularScore(10, 12), 0);
+
+  // Test 4: Team B vote split should show 100% on Team B, not Team A
+  const split = calculateRegularVoteSplit(
+    [{ predictedWinnerId: 2, customPredictedWinner: null }],
+    {
+      teamAId: 1,
+      teamBId: 2,
+      teamA: { id: 1, name: 'Team A' },
+      teamB: { id: 2, name: 'Team B' },
+      startTime: matchTime,
+      lockTime,
+    }
+  );
+
+  assert.strictEqual(split.votesTeamA, 0);
+  assert.strictEqual(split.votesTeamB, 1);
+  assert.strictEqual(split.percentTeamA, 0);
+  assert.strictEqual(split.percentTeamB, 100);
+
+  // Test 5: Scheduled DB status should display as locked once lock time has passed
+  assert.strictEqual(
+    getRegularDisplayStatus(
+      {
+        status: 'SCHEDULED',
+        startTime: matchTime,
+        lockTime,
+      },
+      lockedPredictionNow
+    ),
+    'LOCKED'
+  );
 
   console.log('✅ All Regular Season Tests Passed!');
 }

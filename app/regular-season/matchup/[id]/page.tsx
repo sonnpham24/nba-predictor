@@ -27,7 +27,7 @@ export default function RegularMatchupDetailPage() {
 
   const fetchDetail = async () => {
     try {
-      const res = await fetch(`/api/regular/matchups/${matchupId}`);
+      const res = await fetch(`/api/regular/matchups/${matchupId}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(locale === 'en' ? 'Failed to load matchup details' : 'Không thể tải thông tin trận đấu');
       const data = await res.json();
       setMatchup(data);
@@ -41,7 +41,7 @@ export default function RegularMatchupDetailPage() {
   const fetchProps = async () => {
     setLoadingProps(true);
     try {
-      const res = await fetch(`/api/regular/props?matchupId=${matchupId}`);
+      const res = await fetch(`/api/regular/props?matchupId=${matchupId}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setPropsList(data);
@@ -58,19 +58,51 @@ export default function RegularMatchupDetailPage() {
     fetchProps();
   }, [matchupId, locale]);
 
-  const handlePredict = async (predictedWinnerId: number) => {
+  const handlePredict = async (winnerObj: any) => {
     setSubmitting(true);
     try {
+      const payload: any = { matchupId: parseInt(matchupId as string) };
+      if (winnerObj.id > 0) {
+        payload.predictedWinnerId = winnerObj.id;
+      } else {
+        payload.predictedWinnerId = winnerObj.id;
+        payload.customPredictedWinner = winnerObj.name;
+      }
+
       const res = await fetch('/api/regular/predictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchupId: parseInt(matchupId as string), predictedWinnerId }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || (locale === 'en' ? 'Prediction failed' : 'Dự đoán thất bại'));
 
       toast.success(data.message || (locale === 'en' ? '✅ Prediction saved!' : '✅ Đã lưu dự đoán thành công!'));
+      setMatchup((prev: any) => {
+        if (!prev) return prev;
+
+        const votedTeamA = winnerObj.id === prev.teamA.id || winnerObj.name === prev.teamA.name;
+        const votesTeamA = prev.votesTeamA + (votedTeamA ? 1 : 0);
+        const votesTeamB = prev.votesTeamB + (votedTeamA ? 0 : 1);
+        const totalPredictions = votesTeamA + votesTeamB;
+        const percentTeamA = totalPredictions > 0 ? Math.round((votesTeamA / totalPredictions) * 100) : 50;
+        const percentTeamB = totalPredictions > 0 ? 100 - percentTeamA : 50;
+
+        return {
+          ...prev,
+          userPrediction: {
+            id: data.prediction.id,
+            predictedWinnerId: data.prediction.predictedWinnerId,
+            customPredictedWinner: data.prediction.customPredictedWinner,
+          },
+          votesTeamA,
+          votesTeamB,
+          totalPredictions,
+          percentTeamA,
+          percentTeamB,
+        };
+      });
       fetchDetail();
     } catch (err: any) {
       toast.error(err.message || 'Error');
@@ -175,10 +207,17 @@ export default function RegularMatchupDetailPage() {
     );
   }
 
-  const now = new Date();
-  const lock = new Date(matchup.lockTime);
-  const open = new Date(matchup.openTime);
-  const canPredict = matchup.status === 'SCHEDULED' && now >= open && now < lock;
+  const votingOpen = Boolean(matchup.canPredict);
+  const canPredict = votingOpen && !matchup.userPrediction;
+  const displayStatus = matchup.displayStatus || matchup.status;
+  const isVotedA =
+    matchup.userPrediction &&
+    (matchup.userPrediction.predictedWinnerId === matchup.teamA.id ||
+      matchup.userPrediction.customPredictedWinner === matchup.teamA.name);
+  const isVotedB =
+    matchup.userPrediction &&
+    (matchup.userPrediction.predictedWinnerId === matchup.teamB.id ||
+      matchup.userPrediction.customPredictedWinner === matchup.teamB.name);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
@@ -233,9 +272,14 @@ export default function RegularMatchupDetailPage() {
           {/* VS */}
           <div className="col-span-1 flex flex-col items-center justify-center">
             <span className="text-2xl md:text-3xl font-black text-slate-600">VS</span>
-            {matchup.status === 'IN_PROGRESS' && (
+            {displayStatus === 'IN_PROGRESS' && (
               <span className="mt-2 text-xs font-bold text-red-400 bg-red-500/20 px-2.5 py-1 rounded-full animate-pulse-glow">
                 🔴 LIVE
+              </span>
+            )}
+            {displayStatus === 'LOCKED' && (
+              <span className="mt-2 text-xs font-bold text-amber-400 bg-amber-500/20 px-2.5 py-1 rounded-full">
+                {t.predictLocked}
               </span>
             )}
           </div>
@@ -300,34 +344,34 @@ export default function RegularMatchupDetailPage() {
             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
               <button
                 disabled={submitting}
-                onClick={() => handlePredict(matchup.teamA.id)}
+                onClick={() => handlePredict(matchup.teamA)}
                 className={`py-3.5 px-4 rounded-2xl font-extrabold text-sm transition flex flex-col items-center justify-center leading-normal ${
-                  matchup.userPrediction?.predictedWinnerId === matchup.teamA.id
+                  isVotedA
                     ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-400 shadow-xl'
                     : 'bg-slate-800 text-slate-200 hover:bg-amber-500/20 hover:text-amber-300 border border-slate-700'
                 }`}
               >
-                <span>{matchup.userPrediction?.predictedWinnerId === matchup.teamA.id ? `✓ ${t.voted}` : t.voteFor}</span>
+                <span>{isVotedA ? `✓ ${t.voted}` : t.voteFor}</span>
                 <span className="text-xs opacity-80 break-words">{matchup.teamA.name}</span>
               </button>
 
               <button
                 disabled={submitting}
-                onClick={() => handlePredict(matchup.teamB.id)}
+                onClick={() => handlePredict(matchup.teamB)}
                 className={`py-3.5 px-4 rounded-2xl font-extrabold text-sm transition flex flex-col items-center justify-center leading-normal ${
-                  matchup.userPrediction?.predictedWinnerId === matchup.teamB.id
+                  isVotedB
                     ? 'bg-blue-500 text-white ring-2 ring-blue-400 shadow-xl'
                     : 'bg-slate-800 text-slate-200 hover:bg-blue-500/20 hover:text-blue-300 border border-slate-700'
                 }`}
               >
-                <span>{matchup.userPrediction?.predictedWinnerId === matchup.teamB.id ? `✓ ${t.voted}` : t.voteFor}</span>
+                <span>{isVotedB ? `✓ ${t.voted}` : t.voteFor}</span>
                 <span className="text-xs opacity-80 break-words">{matchup.teamB.name}</span>
               </button>
             </div>
           ) : (
             <div className="text-center py-4 bg-slate-800/40 rounded-2xl text-slate-400 text-sm font-semibold leading-normal break-words">
               {matchup.userPrediction
-                ? `${t.voted}: ${matchup.userPrediction.predictedWinnerId === matchup.teamA.id ? matchup.teamA.name : matchup.teamB.name}`
+                ? `${t.voted}: ${isVotedA ? matchup.teamA.name : matchup.teamB.name}`
                 : t.predictLocked}
             </div>
           )}
@@ -346,7 +390,7 @@ export default function RegularMatchupDetailPage() {
             </p>
           </div>
 
-          {canPredict && (
+          {votingOpen && (
             <button
               onClick={() => setShowCreatePropForm(!showCreatePropForm)}
               className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-2xl transition shadow leading-normal self-start sm:self-auto"
@@ -484,6 +528,10 @@ export default function RegularMatchupDetailPage() {
                         }`}>
                           ✓ RESULT: {p.resolvedOutcome} {p.actualStatValue !== null ? `(${p.actualStatValue})` : ''}
                         </span>
+                      ) : !votingOpen ? (
+                        <span className="bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1 rounded-xl text-xs font-bold uppercase">
+                          {t.predictLocked}
+                        </span>
                       ) : (
                         <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1 rounded-xl text-xs font-bold uppercase">
                           ⏳ OPEN FOR VOTES
@@ -513,7 +561,7 @@ export default function RegularMatchupDetailPage() {
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                    {canPredict && !p.isResolved ? (
+                    {votingOpen && !p.isResolved ? (
                       <div className="grid grid-cols-2 gap-3 w-full sm:w-auto">
                         <button
                           disabled={votingPropId === p.id}
