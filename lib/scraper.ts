@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { calculateLockTime, calculateOpenTime } from '@/lib/dateUtils';
 import { logSystemEvent } from '@/lib/logger';
+import { fetchAndAutoResolvePropsForMatchup } from '@/lib/espnBoxscore';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
@@ -78,14 +79,12 @@ export async function scrapeTeamRoster(teamId: number) {
     const data = await res.json();
     const rawAthletes = data.athletes || [];
 
-    // Smart Starting 5 Selection: Select PG, SG, SF, PF, C positions first if available
     const positionStarters = new Set<string>();
 
     const athletes = rawAthletes.map((a: any, idx: number) => {
       const pos = a.position?.abbreviation || 'N/A';
       let isStarter = a.starter === true;
 
-      // Smart position-based starter allocation if not explicitly marked
       if (!isStarter && !positionStarters.has(pos) && positionStarters.size < 5 && ['PG', 'SG', 'SF', 'PF', 'C', 'G', 'F'].includes(pos)) {
         positionStarters.add(pos);
         isStarter = true;
@@ -221,7 +220,7 @@ export async function fetchUpcomingSchedule(daysAhead = 7) {
         });
 
         const startTime = new Date(competition.date || ev.date);
-        const lockTime = calculateLockTime(startTime);
+        const lockTime = calculateLockTime(startTime); // Lock time is exact tip-off
         const openTime = calculateOpenTime(startTime);
 
         const statusState = competition.status?.type?.state;
@@ -357,6 +356,9 @@ export async function fetchLiveScoreboardAndSettle() {
             `Tự động hoàn tất & chốt kết quả trận đấu ID ${existingMatchup.id} (Tỉ số: ${actualScore}, Đội thắng ID: ${actualWinnerId}).`,
             'INFO'
           );
+
+          // Tự động cào Boxscore chỉ số cầu thủ và chốt kết quả Prop Bets
+          await fetchAndAutoResolvePropsForMatchup(existingMatchup.id);
         }
       }
     }

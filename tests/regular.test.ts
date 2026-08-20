@@ -4,12 +4,12 @@ import { calculateLockTime, calculateOpenTime, isPredictionOpen } from '../lib/d
 function runRegularSeasonTests() {
   console.log('Running Regular Season & Scraper Tests...');
 
-  // Test 1: Calculate lockTime (-30 mins) and openTime (-7 days)
+  // Test 1: Calculate lockTime (exact tip-off start time) and openTime (-7 days)
   const matchTime = new Date('2026-08-20T20:00:00.000Z');
   const lockTime = calculateLockTime(matchTime);
   const openTime = calculateOpenTime(matchTime);
 
-  const expectedLock = new Date('2026-08-20T19:30:00.000Z').getTime();
+  const expectedLock = new Date('2026-08-20T20:00:00.000Z').getTime();
   const expectedOpen = new Date('2026-08-13T20:00:00.000Z').getTime();
 
   assert.strictEqual(lockTime.getTime(), expectedLock);
@@ -19,7 +19,7 @@ function runRegularSeasonTests() {
   const validPredictionNow = new Date('2026-08-20T19:00:00.000Z'); // 1 hour before start
   assert.strictEqual(isPredictionOpen(matchTime, validPredictionNow), true);
 
-  const lockedPredictionNow = new Date('2026-08-20T19:35:00.000Z'); // 25 mins before start (locked)
+  const lockedPredictionNow = new Date('2026-08-20T20:05:00.000Z'); // 5 mins after start (locked)
   assert.strictEqual(isPredictionOpen(matchTime, lockedPredictionNow), false);
 
   const tooEarlyPredictionNow = new Date('2026-08-12T20:00:00.000Z'); // 8 days before start

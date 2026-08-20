@@ -38,8 +38,8 @@ export function calculateOpenTime(startTime: Date): Date {
 }
 
 export function calculateLockTime(startTime: Date): Date {
-  // 30 minutes before start time
-  return new Date(startTime.getTime() - 30 * 60 * 1000);
+  // Exact tip-off start time
+  return new Date(startTime.getTime());
 }
 
 export function isPredictionOpen(startTime: Date, now = new Date()): boolean {

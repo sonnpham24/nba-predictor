@@ -29,6 +29,8 @@ model User {
   createdAt          DateTime            @default(now())
   predictions        Prediction[]
   regularPredictions RegularPrediction[]
+  createdProps       RegularProp[]       @relation("CreatedProps")
+  propVotes          PropVote[]
 }
 
 model Prediction {
@@ -102,6 +104,7 @@ model RegularMatchup {
   lockTime       DateTime
   openTime       DateTime
   predictions    RegularPrediction[]
+  props          RegularProp[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 }
@@ -118,6 +121,36 @@ model RegularPrediction {
   createdAt              DateTime       @default(now())
 
   @@unique([userId, matchupId])
+}
+
+model RegularProp {
+  id               Int            @id @default(autoincrement())
+  matchupId        Int
+  matchup          RegularMatchup @relation(fields: [matchupId], references: [id])
+  creatorId        Int
+  creator          User           @relation("CreatedProps", fields: [creatorId], references: [id])
+  question         String
+  playerName       String?
+  statType         String?
+  threshold        Float?
+  actualStatValue  Float?
+  resolvedOutcome  String?
+  isResolved       Boolean        @default(false)
+  isSettled        Boolean        @default(false)
+  votes            PropVote[]
+  createdAt        DateTime       @default(now())
+}
+
+model PropVote {
+  id        Int         @id @default(autoincrement())
+  propId    Int
+  prop      RegularProp @relation(fields: [propId], references: [id])
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id])
+  vote      String
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, propId])
 }
 
 model SystemLog {

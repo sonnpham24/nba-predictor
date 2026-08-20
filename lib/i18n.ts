@@ -19,6 +19,24 @@ export const translations = {
     proAdmin: 'PRO ADMIN',
     verifiedAdminCheckmark: '☑️ Verified Admin',
 
+    // Prop Bets
+    propBetsTitle: '🎲 YES / NO PROP BETS',
+    propBetsSub: 'Create & vote on custom Yes/No prop questions. Points (+1 pt) awarded when resolved, provided at least 1 user votes on the opposite side.',
+    createPropBtn: '➕ Create New Prop Question',
+    propQuestionLabel: 'Question Title',
+    propQuestionPlaceholder: 'e.g. Stephen Curry > 8 Three-Pointers Made?',
+    playerNameLabel: 'Player Name (Optional for ESPN Auto Boxscore)',
+    playerNamePlaceholder: 'e.g. Stephen Curry',
+    statTypeLabel: 'Stat Category (Optional for Auto Boxscore)',
+    thresholdLabel: 'Threshold Value (Optional)',
+    btnSubmitProp: 'CREATE PROP BET NOW →',
+    voteYes: 'Vote YES',
+    voteNo: 'Vote NO',
+    votedYes: 'Voted YES',
+    votedNo: 'Voted NO',
+    resolveOutcome: 'Resolve Outcome:',
+    oppositeVoteNotice: '⚠️ Notice: Requires votes on both YES & NO sides to award +1 pt upon settlement.',
+
     // Settings Page
     settingsTitle: '👤 USER ACCOUNT & PROFILE SETTINGS',
     settingsSub: 'Manage your avatar, supported NBA team, display name, bio, and view prediction history.',
@@ -182,6 +200,24 @@ export const translations = {
     navLogout: 'Đăng xuất',
     proAdmin: 'PRO ADMIN',
     verifiedAdminCheckmark: '☑️ Admin Đã Xác Thức',
+
+    // Prop Bets
+    propBetsTitle: '🎲 DỰ ĐOÁN NHỎ YES / NO (PROP BETS)',
+    propBetsSub: 'Tạo & bình chọn các câu hỏi dự đoán Yes/No. Điểm (+1 pt) chỉ được cộng khi có ít nhất 1 người chọn phe ngược lại.',
+    createPropBtn: '➕ Tạo Câu Hỏi Dự Đoán Mới',
+    propQuestionLabel: 'Tiêu đề câu hỏi',
+    propQuestionPlaceholder: 'Ví dụ: Stephen Curry ném được trên 8 quả 3 điểm?',
+    playerNameLabel: 'Tên cầu thủ (Tùy chọn cho ESPN Auto Boxscore)',
+    playerNamePlaceholder: 'Ví dụ: Stephen Curry',
+    statTypeLabel: 'Loại chỉ số (Tùy chọn cho Auto Boxscore)',
+    thresholdLabel: 'Ngưỡng chỉ số (Tùy chọn)',
+    btnSubmitProp: 'TẠO CÂU HỎI PROP BET NOW →',
+    voteYes: 'Chọn YES',
+    voteNo: 'Chọn NO',
+    votedYes: 'Đã chọn YES',
+    votedNo: 'Đã chọn NO',
+    resolveOutcome: 'Chốt kết quả:',
+    oppositeVoteNotice: '⚠️ Lưu ý: Cần có người chơi bình chọn ở cả 2 phe YES và NO thì mới được cộng điểm +1.',
 
     // Settings Page
     settingsTitle: '👤 CÀI ĐẶT TÀI KHOẢN & HỒ SƠ',
