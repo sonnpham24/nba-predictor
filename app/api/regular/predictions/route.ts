@@ -60,8 +60,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Đã hết thời gian dự đoán (trận đấu đã bắt đầu hoặc đã khóa)' }, { status: 400 });
     }
 
-    const pWinId = predictedWinnerId ? parseInt(predictedWinnerId) : null;
-    const cWinName = customPredictedWinner ? String(customPredictedWinner).trim() : null;
+    let pWinId: number | null = predictedWinnerId ? parseInt(predictedWinnerId) : null;
+    let cWinName: string | null = customPredictedWinner ? String(customPredictedWinner).trim() : null;
+
+    // Xử lý an toàn cho ID âm (ví dụ -1 cho team custom)
+    if (pWinId !== null && pWinId <= 0) {
+      pWinId = null;
+      if (!cWinName) {
+        if (predictedWinnerId === -1 || predictedWinnerId === '-1') {
+          cWinName = matchup.customTeamA || matchup.teamA?.name || 'Team A';
+        } else if (predictedWinnerId === -2 || predictedWinnerId === '-2') {
+          cWinName = matchup.customTeamB || matchup.teamB?.name || 'Team B';
+        }
+      }
+    }
 
     const prediction = await prisma.regularPrediction.upsert({
       where: {

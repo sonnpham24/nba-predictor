@@ -5,6 +5,43 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useLanguage } from '@/context/LanguageContext';
 
+function MatchCountdown({ startTime }: { startTime: string }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const diff = new Date(startTime).getTime() - new Date().getTime();
+      if (diff <= 0) {
+        setTimeLeft('00m 00s');
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+      } else {
+        setTimeLeft(`${minutes}m ${seconds}s`);
+      }
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [startTime]);
+
+  return (
+    <span className="inline-flex items-center space-x-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold">
+      <span>⏳</span>
+      <span>Closes in {timeLeft}</span>
+    </span>
+  );
+}
+
 export default function RegularSeasonPage() {
   const { t, locale } = useLanguage();
   const [selectedDaysAhead, setSelectedDaysAhead] = useState(0);
@@ -38,7 +75,17 @@ export default function RegularSeasonPage() {
       const res = await fetch(`/api/regular/matchups?date=${dateStr}`);
       if (!res.ok) throw new Error(locale === 'en' ? 'Failed to load matchups' : 'Lỗi tải danh sách trận đấu');
       const data = await res.json();
-      setMatchups(data);
+
+      // SẮP XẾP: Ưu tiên trận Live (IN_PROGRESS) & Chưa đấu (SCHEDULED) lên trên, đẩy các trận đã kết thúc (FINISHED) xuống dưới cùng
+      const sorted = [...data].sort((a: any, b: any) => {
+        if (a.status === 'FINISHED' && b.status !== 'FINISHED') return 1;
+        if (a.status !== 'FINISHED' && b.status === 'FINISHED') return -1;
+        if (a.status === 'IN_PROGRESS' && b.status !== 'IN_PROGRESS') return -1;
+        if (a.status !== 'IN_PROGRESS' && b.status === 'IN_PROGRESS') return 1;
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      });
+
+      setMatchups(sorted);
     } catch (err: any) {
       toast.error(err.message || 'Error');
     } finally {
@@ -142,7 +189,11 @@ export default function RegularSeasonPage() {
             return (
               <div
                 key={m.id}
-                className="glass-card p-6 md:p-8 rounded-3xl border border-white/10 flex flex-col justify-between space-y-6 hover:border-amber-500/30 transition-all duration-300 shadow-xl relative overflow-hidden"
+                className={`glass-card p-6 md:p-8 rounded-3xl border flex flex-col justify-between space-y-6 transition-all duration-300 shadow-xl relative overflow-hidden ${
+                  m.status === 'FINISHED'
+                    ? 'border-slate-800/80 opacity-75 bg-slate-950/60'
+                    : 'border-white/10 hover:border-amber-500/30'
+                }`}
               >
                 {/* Custom Game Badge */}
                 {m.isCustom && (
@@ -152,10 +203,17 @@ export default function RegularSeasonPage() {
                 )}
 
                 {/* Header Status Bar */}
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-                  <span className="text-xs font-mono text-slate-400 font-semibold leading-normal">
-                    ⏰ {new Date(m.startTime).toLocaleTimeString(locale === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })} (GMT+7)
-                  </span>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+                  <div className="flex flex-wrap items-center space-x-2">
+                    <span className="text-xs font-mono text-slate-400 font-semibold leading-normal">
+                      ⏰ {new Date(m.startTime).toLocaleTimeString(locale === 'en' ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })} (GMT+7)
+                    </span>
+
+                    {/* COUNTDOWN TIMER FOR UPCOMING GAMES */}
+                    {canPredict && (
+                      <MatchCountdown startTime={m.startTime} />
+                    )}
+                  </div>
 
                   <div>
                     {m.status === 'FINISHED' ? (

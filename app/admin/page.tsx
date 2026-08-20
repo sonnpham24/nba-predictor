@@ -35,6 +35,13 @@ export default function AdminPage() {
   const [settleScores, setSettleScores] = useState<{ [matchupId: number]: { scoreA: string; scoreB: string; winnerType: 'teamA' | 'teamB' } }>({});
   const [settlingMatchupId, setSettlingMatchupId] = useState<number | null>(null);
 
+  // Pagination States for Custom Matchup Tables
+  const [createdListPage, setCreatedListPage] = useState(1);
+  const [createdListPageSize, setCreatedListPageSize] = useState(10);
+
+  const [settleListPage, setSettleListPage] = useState(1);
+  const [settleListPageSize, setSettleListPageSize] = useState(10);
+
   // Admin Score Editor State
   const [scoreAdjustments, setScoreAdjustments] = useState<{ [userId: number]: number }>({});
 
@@ -184,6 +191,28 @@ export default function AdminPage() {
       toast.error(err.message);
     } finally {
       setCreatingCustom(false);
+    }
+  };
+
+  const handleDeleteCustomMatchup = async (matchupId: number) => {
+    const confirmDelete = window.confirm(
+      locale === 'en'
+        ? '⚠️ Are you sure you want to delete this custom matchup? This action cannot be undone.'
+        : '⚠️ Bạn có chắc chắn muốn xóa trận đấu tùy chỉnh này không? Hành động này không thể hoàn tác.'
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`/api/admin/regular/custom-matchup?id=${matchupId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+
+      toast.success(data.message || '✅ Deleted custom matchup successfully!');
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -397,7 +426,25 @@ export default function AdminPage() {
   };
 
   const pendingApprovalsCount = teams.filter((t) => !t.isApproved || t.pendingData !== null).length;
-  const customMatchupsList = matchups.filter((m) => m.isCustom);
+
+  // SORT CUSTOM MATCHUPS FROM NEWEST TO OLDEST
+  const sortedCustomMatchupsList = matchups
+    .filter((m) => m.isCustom)
+    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
+  // Pagination for Created Custom Matchups List Table
+  const createdTotalPages = Math.ceil(sortedCustomMatchupsList.length / createdListPageSize) || 1;
+  const paginatedCreatedList = sortedCustomMatchupsList.slice(
+    (createdListPage - 1) * createdListPageSize,
+    createdListPage * createdListPageSize
+  );
+
+  // Pagination for Settle Custom Matchups Table
+  const settleTotalPages = Math.ceil(sortedCustomMatchupsList.length / settleListPageSize) || 1;
+  const paginatedSettleList = sortedCustomMatchupsList.slice(
+    (settleListPage - 1) * settleListPageSize,
+    settleListPage * settleListPageSize
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
@@ -733,83 +780,170 @@ export default function AdminPage() {
             </button>
           </form>
 
-          {/* List of Created Custom Matchups */}
+          {/* List of Created Custom Matchups WITH PAGINATION & DELETE BUTTON */}
           <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
-            <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
-              📜 CREATED CUSTOM MATCHUPS LIST
-            </h2>
-            <p className="text-xs text-slate-400 leading-normal">
-              {locale === 'en'
-                ? 'Overview of all custom matchups created by Admin.'
-                : 'Danh sách tổng hợp tất cả các trận đấu tùy chỉnh do Admin tự tạo.'}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
+                  📜 CREATED CUSTOM MATCHUPS LIST
+                </h2>
+                <p className="text-xs text-slate-400 leading-normal">
+                  {locale === 'en'
+                    ? 'Sorted from newest to oldest. Admin can delete custom matchups before they start.'
+                    : 'Hiển thị từ mới nhất đến cũ nhất. Admin có thể xóa các trận chưa bắt đầu.'}
+                </p>
+              </div>
 
-            {customMatchupsList.length === 0 ? (
+              {/* Page Size Selector */}
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-slate-400 font-semibold">Hiển thị:</span>
+                <select
+                  value={createdListPageSize}
+                  onChange={(e) => {
+                    setCreatedListPageSize(parseInt(e.target.value));
+                    setCreatedListPage(1);
+                  }}
+                  className="glass-input px-3 py-1.5 rounded-xl text-xs font-bold text-amber-400"
+                >
+                  <option value={10} className="bg-slate-900">10 mục/trang</option>
+                  <option value={50} className="bg-slate-900">50 mục/trang</option>
+                  <option value={100} className="bg-slate-900">100 mục/trang</option>
+                </select>
+              </div>
+            </div>
+
+            {sortedCustomMatchupsList.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-xs font-semibold">
                 No custom matchups created yet.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-300">
-                  <thead className="bg-slate-950/80 text-xs font-black text-slate-400 border-b border-slate-800">
-                    <tr>
-                      <th className="p-3">ID</th>
-                      <th className="p-3">Matchup</th>
-                      <th className="p-3">Start Time (GMT+7)</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
-                    {customMatchupsList.map((m) => {
-                      const nameA = m.teamA ? m.teamA.name : m.customTeamA;
-                      const nameB = m.teamB ? m.teamB.name : m.customTeamB;
-                      return (
-                        <tr key={m.id}>
-                          <td className="p-3 font-bold text-slate-500">#{m.id}</td>
-                          <td className="p-3 font-bold text-white">
-                            {nameA} vs {nameB}
-                          </td>
-                          <td className="p-3 text-slate-300">
-                            {new Date(m.startTime).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
-                          </td>
-                          <td className="p-3">
-                            {m.isSettled ? (
-                              <span className="text-emerald-400 font-bold">FINISHED</span>
-                            ) : (
-                              <span className="text-amber-400 font-bold">SCHEDULED</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-amber-400 font-bold">
-                            {m.actualScore || '-'}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="space-y-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-300">
+                    <thead className="bg-slate-950/80 text-xs font-black text-slate-400 border-b border-slate-800">
+                      <tr>
+                        <th className="p-3">ID</th>
+                        <th className="p-3">Matchup</th>
+                        <th className="p-3">Start Time (GMT+7)</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Result</th>
+                        <th className="p-3 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+                      {paginatedCreatedList.map((m) => {
+                        const nameA = m.teamA ? m.teamA.name : m.customTeamA;
+                        const nameB = m.teamB ? m.teamB.name : m.customTeamB;
+                        const now = new Date();
+                        const canDelete = now < new Date(m.startTime) && !m.isSettled && m.status === 'SCHEDULED';
+
+                        return (
+                          <tr key={m.id}>
+                            <td className="p-3 font-bold text-slate-500">#{m.id}</td>
+                            <td className="p-3 font-bold text-white">
+                              {nameA} vs {nameB}
+                            </td>
+                            <td className="p-3 text-slate-300">
+                              {new Date(m.startTime).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
+                            </td>
+                            <td className="p-3">
+                              {m.isSettled ? (
+                                <span className="text-emerald-400 font-bold">FINISHED</span>
+                              ) : (
+                                <span className="text-amber-400 font-bold">SCHEDULED</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-amber-400 font-bold">
+                              {m.actualScore || '-'}
+                            </td>
+                            <td className="p-3 text-center">
+                              {canDelete ? (
+                                <button
+                                  onClick={() => handleDeleteCustomMatchup(m.id)}
+                                  className="px-3 py-1 bg-red-600/80 hover:bg-red-600 text-white font-bold rounded-xl text-[11px] transition shadow"
+                                >
+                                  🗑️ Delete
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-slate-500 italic font-sans" title="Cannot delete started or settled matchup">
+                                  🔒 Locked
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls for Created List */}
+                {createdTotalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                    <span className="text-xs text-slate-400">
+                      {t.pageOf} <strong>{createdListPage}</strong> / <strong>{createdTotalPages}</strong> ({sortedCustomMatchupsList.length} total)
+                    </span>
+                    <div className="flex space-x-2">
+                      <button
+                        disabled={createdListPage === 1}
+                        onClick={() => setCreatedListPage((p) => Math.max(1, p - 1))}
+                        className="px-3 py-1.5 bg-slate-900 disabled:opacity-40 text-slate-200 text-xs font-bold rounded-xl border border-slate-700"
+                      >
+                        {t.prevPage}
+                      </button>
+                      <button
+                        disabled={createdListPage >= createdTotalPages}
+                        onClick={() => setCreatedListPage((p) => Math.min(createdTotalPages, p + 1))}
+                        className="px-3 py-1.5 bg-slate-900 disabled:opacity-40 text-slate-200 text-xs font-bold rounded-xl border border-slate-700"
+                      >
+                        {t.nextPage}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Settle Custom Matchups Inline Section */}
+          {/* Settle Custom Matchups Inline Section WITH PAGINATION */}
           <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
-            <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
-              {t.settleCustomTitle}
-            </h2>
-            <p className="text-xs text-slate-400 leading-normal">
-              {locale === 'en'
-                ? 'Input final score & select winner for custom games past their start time. +1 point will be AUTOMATICALLY distributed.'
-                : 'Chỉ cho phép nhập điểm & Settle đối với các trận đấu ĐÃ QUÁ GIỜ BẮT ĐẦU. Trận chưa tới giờ sẽ bị khóa.'}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
+                  {t.settleCustomTitle}
+                </h2>
+                <p className="text-xs text-slate-400 leading-normal">
+                  {locale === 'en'
+                    ? 'Sorted newest to oldest. Input final score & select winner for custom games past their start time.'
+                    : 'Hiển thị từ mới nhất đến cũ nhất. Chỉ cho phép nhập điểm đối với các trận ĐÃ QUÁ GIỜ BẮT ĐẦU.'}
+                </p>
+              </div>
 
-            {customMatchupsList.length === 0 ? (
+              {/* Page Size Selector */}
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-slate-400 font-semibold">Hiển thị:</span>
+                <select
+                  value={settleListPageSize}
+                  onChange={(e) => {
+                    setSettleListPageSize(parseInt(e.target.value));
+                    setSettleListPage(1);
+                  }}
+                  className="glass-input px-3 py-1.5 rounded-xl text-xs font-bold text-amber-400"
+                >
+                  <option value={10} className="bg-slate-900">10 mục/trang</option>
+                  <option value={50} className="bg-slate-900">50 mục/trang</option>
+                  <option value={100} className="bg-slate-900">100 mục/trang</option>
+                </select>
+              </div>
+            </div>
+
+            {sortedCustomMatchupsList.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-xs font-semibold">
                 No custom matchups available to settle.
               </div>
             ) : (
               <div className="space-y-6">
-                {customMatchupsList.map((m) => {
+                {paginatedSettleList.map((m) => {
                   const nameA = m.teamA ? m.teamA.name : m.customTeamA;
                   const nameB = m.teamB ? m.teamB.name : m.customTeamB;
                   const now = new Date();
@@ -959,6 +1093,31 @@ export default function AdminPage() {
                     </div>
                   );
                 })}
+
+                {/* Pagination Controls for Settle List */}
+                {settleTotalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                    <span className="text-xs text-slate-400">
+                      {t.pageOf} <strong>{settleListPage}</strong> / <strong>{settleTotalPages}</strong> ({sortedCustomMatchupsList.length} total)
+                    </span>
+                    <div className="flex space-x-2">
+                      <button
+                        disabled={settleListPage === 1}
+                        onClick={() => setSettleListPage((p) => Math.max(1, p - 1))}
+                        className="px-3 py-1.5 bg-slate-900 disabled:opacity-40 text-slate-200 text-xs font-bold rounded-xl border border-slate-700"
+                      >
+                        {t.prevPage}
+                      </button>
+                      <button
+                        disabled={settleListPage >= settleTotalPages}
+                        onClick={() => setSettleListPage((p) => Math.min(settleTotalPages, p + 1))}
+                        className="px-3 py-1.5 bg-slate-900 disabled:opacity-40 text-slate-200 text-xs font-bold rounded-xl border border-slate-700"
+                      >
+                        {t.nextPage}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
