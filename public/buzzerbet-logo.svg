@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-labelledby="title desc">
+  <title id="title">BuzzerBet logo</title>
+  <desc id="desc">BuzzerBet wordmark with a basketball checkmark icon.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset=".52" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#facc15"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff7ed"/>
+      <stop offset="1" stop-color="#fde68a"/>
+    </linearGradient>
+  </defs>
+  <rect width="360" height="96" rx="24" fill="none"/>
+  <g transform="translate(8 8)">
+    <rect width="80" height="80" rx="22" fill="#07090e"/>
+    <circle cx="40" cy="40" r="31" fill="url(#gold)"/>
+    <path d="M10 41h60" stroke="#111827" stroke-width="4.2" stroke-linecap="round" opacity=".55"/>
+    <path d="M40 10c-9.5 8.5-14 19-14 30s4.5 21.5 14 30" fill="none" stroke="#111827" stroke-width="4.2" stroke-linecap="round" opacity=".55"/>
+    <path d="M40 10c9.5 8.5 14 19 14 30s-4.5 21.5-14 30" fill="none" stroke="#111827" stroke-width="4.2" stroke-linecap="round" opacity=".55"/>
+    <path d="M25 42l10.5 10.5L56 27" fill="none" stroke="#07090e" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/>
+    <path d="M25 42l10.5 10.5L56 27" fill="none" stroke="url(#shine)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="104" y="49" fill="url(#gold)" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900" letter-spacing="1">BuzzerBet</text>
+  <text x="106" y="70" fill="#94a3b8" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="800" letter-spacing="3">2026-27 SEASON HUB</text>
+</svg>

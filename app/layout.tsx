@@ -14,8 +14,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "NBA Predictor 2026-27 - Ultimate Sports Experience",
-  description: "Dự đoán kết quả NBA Regular Season và Playoffs 2026-27 đẳng cấp hàng đầu",
+  title: "BuzzerBet 2026-27 - NBA Prediction Hub",
+  description: "Dự đoán kết quả NBA Regular Season, Playoffs và Yes/No prop bets cùng cộng đồng BuzzerBet.",
+  icons: {
+    icon: "/buzzerbet-icon.svg",
+    shortcut: "/buzzerbet-icon.svg",
+    apple: "/buzzerbet-icon.svg",
+  },
 };
 
 export default function RootLayout({

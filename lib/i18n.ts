@@ -3,7 +3,7 @@ export type Locale = 'en' | 'vi';
 export const translations = {
   en: {
     // Navigation
-    navBrand: 'NBA PREDICTOR',
+    navBrand: 'BUZZERBET',
     navSub: '2026-27 SEASON HUB',
     navRegular: '🏀 Regular Season',
     navStandings: '📈 Standings 2026-27',
@@ -71,7 +71,7 @@ export const translations = {
     settleCustomTitle: '🏁 Settle Custom Matchups & Distribute Points',
 
     // Public Profile Modal & Page
-    publicProfileTitle: 'Predictor Profile Showcase',
+    publicProfileTitle: 'BuzzerBet Profile Showcase',
     supportedTeam: 'Supporting Team',
     noSupportedTeam: 'No Team Selected',
     memberSince: 'Member Since',
@@ -150,7 +150,7 @@ export const translations = {
 
     // Leaderboard
     leaderboardTitle: '📊 GLOBAL LEADERBOARD 2026-27',
-    leaderboardSub: 'Honoring top predictors in NBA Predictor 2026-27 (Combined Total Score)',
+    leaderboardSub: 'Honoring top predictors in BuzzerBet 2026-27 (Combined Total Score)',
     totalScore: 'Total Score',
     regularPoints: 'Regular Pts',
     playoffPoints: 'Playoff Pts',
@@ -162,7 +162,7 @@ export const translations = {
     // Auth
     authSignInTitle: 'SIGN IN',
     authSignUpTitle: 'CREATE ACCOUNT',
-    authSignInSub: 'Welcome back to NBA Predictor Hub 2026-27',
+    authSignInSub: 'Welcome back to BuzzerBet 2026-27',
     authSignUpSub: 'Join the NBA 2026-27 prediction community',
     usernameLabel: 'Username',
     usernamePlaceholder: 'Enter your username...',
@@ -181,11 +181,11 @@ export const translations = {
 
     // Footer
     developerCredit: 'Developed & Designed by Son Pham (phamcongson297@gmail.com)',
-    copyright: 'Copyright © NBA Predictor 2026-27 - All Rights Reserved.',
+    copyright: 'Copyright © BuzzerBet 2026-27 - All Rights Reserved.',
   },
   vi: {
     // Navigation
-    navBrand: 'NBA PREDICTOR',
+    navBrand: 'BUZZERBET',
     navSub: 'MÙA GIẢI 2026-27',
     navRegular: '🏀 Regular Season',
     navStandings: '📈 BXH NBA 2026-27',
@@ -253,7 +253,7 @@ export const translations = {
     settleCustomTitle: '🏁 Cập Nhật Kết Quả & Tự Động Phân Điểm',
 
     // Public Profile Modal & Page
-    publicProfileTitle: 'Hồ Sơ Người Chơi NBA Predictor',
+    publicProfileTitle: 'Hồ Sơ Người Chơi BuzzerBet',
     supportedTeam: 'Đội Bóng Ủng Hộ',
     noSupportedTeam: 'Chưa Chọn Đội Bóng',
     memberSince: 'Gia Nhập Từ',
@@ -332,7 +332,7 @@ export const translations = {
 
     // Leaderboard
     leaderboardTitle: '📊 BẢNG XẾP HẠNG TOÀN CẦU 2026-27',
-    leaderboardSub: 'Vinh danh cao thủ có Điểm Tổng cao nhất NBA Predictor 2026-27',
+    leaderboardSub: 'Vinh danh cao thủ có Điểm Tổng cao nhất BuzzerBet 2026-27',
     totalScore: 'Điểm Tổng',
     regularPoints: 'Điểm Regular',
     playoffPoints: 'Điểm Playoff',
@@ -344,7 +344,7 @@ export const translations = {
     // Auth
     authSignInTitle: 'ĐĂNG NHẬP',
     authSignUpTitle: 'TẠO TÀI KHOẢN',
-    authSignInSub: 'Chào mừng bạn trở lại với NBA Predictor Hub 2026-27',
+    authSignInSub: 'Chào mừng bạn trở lại với BuzzerBet 2026-27',
     authSignUpSub: 'Tham gia cộng đồng dự đoán kết quả NBA 2026-27',
     usernameLabel: 'Tên tài khoản (Username)',
     usernamePlaceholder: 'Nhập username của bạn...',
@@ -363,6 +363,6 @@ export const translations = {
 
     // Footer
     developerCredit: 'Phát triển & Thiết kế bởi Son Pham (phamcongson297@gmail.com)',
-    copyright: 'Bản quyền © NBA Predictor 2026-27 - Đã đăng ký bản quyền.',
+    copyright: 'Bản quyền © BuzzerBet 2026-27 - Đã đăng ký bản quyền.',
   },
 };

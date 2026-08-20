@@ -71,9 +71,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo */}
           <Link href={user ? '/regular-season' : '/'} className="flex items-center space-x-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition duration-300">
-              <span className="text-2xl">🏀</span>
-            </div>
+            <img
+              src="/buzzerbet-icon.svg"
+              alt="BuzzerBet"
+              className="w-11 h-11 rounded-2xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition duration-300"
+            />
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-wider gradient-text-gold uppercase drop-shadow">
                 {t.navBrand}

@@ -13,15 +13,13 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="flex flex-col items-center md:items-start space-y-3">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 flex items-center justify-center shadow-md">
-                <span className="text-xl">🏀</span>
-              </div>
+              <img src="/buzzerbet-icon.svg" alt="BuzzerBet" className="w-10 h-10 rounded-2xl shadow-md" />
               <span className="text-lg font-black tracking-wider gradient-text-gold uppercase">
                 {t.navBrand}
               </span>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 font-medium leading-normal max-w-sm">
-              Official NBA 2026-27 prediction & score synchronization hub.
+              BuzzerBet is a community NBA 2026-27 prediction and score synchronization hub.
             </p>
           </div>
 

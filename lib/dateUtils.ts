@@ -1,5 +1,5 @@
 /**
- * Date and Time utilities for NBA Predictor in Indochina Time (GMT/UTC +7)
+ * Date and time utilities for BuzzerBet in Indochina Time (GMT/UTC +7).
  */
 
 export const GMT7_OFFSET_MS = 7 * 60 * 60 * 1000;

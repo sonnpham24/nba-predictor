@@ -1,4 +1,4 @@
-# NBA Predictor
+# BuzzerBet
 
 Next.js app for NBA regular-season/team-winner predictions, playoff predictions, Yes/No prop bets, leaderboards, admin sync, and user profiles.
 

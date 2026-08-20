@@ -42,7 +42,7 @@ export default function LandingPage() {
                 href="/regular-season"
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-sm uppercase tracking-wider shadow-2xl shadow-amber-500/25 hover:scale-105 transition duration-300"
               >
-                {locale === 'en' ? 'Go to Predictor Hub →' : 'Vào Sảnh Dự Đoán →'}
+                {locale === 'en' ? 'Go to BuzzerBet Hub →' : 'Vào Sảnh BuzzerBet →'}
               </Link>
               <Link
                 href="/stats"
