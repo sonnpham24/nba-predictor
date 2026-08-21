@@ -98,7 +98,7 @@ export default function HoopickPage() {
     setGameStarted(true);
   };
 
-  // PACK OPENING WITH INTENSE SHAKE & HYPE FX
+  // PACK OPENING WITH ANTI-DUPLICATE & INTENSE SHAKE / HYPE FX
   const handleOpenPack = () => {
     if (!conference || isOpeningPack) return;
 
@@ -116,7 +116,8 @@ export default function HoopickPage() {
       return;
     }
 
-    const cards = drawPackFromConference(conference);
+    const prevTeam = currentPack ? currentPack[0].t : undefined;
+    const cards = drawPackFromConference(conference, prevTeam);
     const hasIcon = cards.some((c) => c.o >= 95);
     const hasElite = !hasIcon && cards.some((c) => c.o >= 90);
 
@@ -126,7 +127,6 @@ export default function HoopickPage() {
     setIsOpeningPack(true);
     setHypeTier(tier);
 
-    // Buildup delay: Icon = 1800ms, Elite = 1000ms, Normal = 500ms
     const delay = hasIcon ? 1800 : hasElite ? 1000 : 500;
 
     setTimeout(() => {
@@ -145,7 +145,8 @@ export default function HoopickPage() {
     }
     if (!conference) return;
 
-    const cards = drawPackFromConference(conference);
+    const prevTeam = currentPack ? currentPack[0].t : undefined;
+    const cards = drawPackFromConference(conference, prevTeam);
     const hasIcon = cards.some((c) => c.o >= 95);
     const hasElite = !hasIcon && cards.some((c) => c.o >= 90);
 
@@ -194,7 +195,6 @@ export default function HoopickPage() {
 
     setPickedCardId(card.cardId);
 
-    // Auto-scroll down to Basketball Court Starting 5
     setTimeout(() => {
       courtSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
@@ -237,7 +237,7 @@ export default function HoopickPage() {
     setLiveQuarterLabel('Q1');
   };
 
-  // 80 GRANULAR TIMELINE TICKING ANIMATION FOR A SINGLE GAME (CONSTANT PACE)
+  // 80 GRANULAR TIMELINE TICKING ANIMATION FOR A SINGLE GAME
   const animateGameSingle = (
     gameRes: PlayoffGameResult,
     onComplete: (res: PlayoffGameResult) => void
@@ -259,7 +259,7 @@ export default function HoopickPage() {
         setIsSimulatingLive(false);
         onComplete(gameRes);
       }
-    }, 50); // 50ms * 80 frames = 4.0s smooth game ticking
+    }, 50);
   };
 
   const handleSimulateNextGame = () => {
@@ -308,7 +308,6 @@ export default function HoopickPage() {
     while (myWinsAcc < 4 && oppWinsAcc < 4) {
       const gameRes = simulateSingleGame(myTeam, currentSeries.oppTeam, gameNum);
 
-      // Run 80-frame timeline ticking at 30ms per frame = 2.4s per game
       await new Promise<void>((resolve) => {
         let step = 0;
         const interval = setInterval(() => {
@@ -345,7 +344,6 @@ export default function HoopickPage() {
       );
       setSelectedGameForBoxScore(gameRes);
 
-      // Pause 1.2 seconds at the end of each game to appreciate final score & series standings
       if (!isSeriesComplete) {
         await new Promise((resolve) => setTimeout(resolve, 1200));
       }
@@ -970,14 +968,32 @@ export default function HoopickPage() {
             </div>
           )}
 
-          {/* 80 GRANULAR TIMELINE REAL-TIME DIGITAL SCOREBOARD */}
+          {/* DYNAMIC STAGE DRESSING SCOREBOARD & BOX SCORE CONTAINERS */}
           {!isChampion && (
-            <div className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
+            <div
+              className={`p-6 sm:p-8 rounded-3xl space-y-6 shadow-2xl text-center transition-all duration-500 ${
+                currentRoundIndex === 3
+                  ? 'border-2 border-amber-400 shadow-2xl shadow-rose-500/40 bg-gradient-to-b from-purple-950/70 via-slate-950 to-amber-950/50'
+                  : currentRoundIndex === 2
+                  ? 'border-2 border-amber-500/70 shadow-2xl shadow-amber-500/30 bg-gradient-to-b from-amber-950/50 via-slate-950 to-slate-950'
+                  : 'glass-card border border-slate-800'
+              }`}
+            >
               <div className="space-y-1">
-                <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
-                  {currentSeries.roundName.toUpperCase()} • BEST OF 7
-                </span>
-                <h3 className="text-xl font-black text-white">
+                {currentRoundIndex === 3 ? (
+                  <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600 text-white font-black text-xs px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl animate-pulse">
+                    <span>🏆 NBA FINALS — ULTIMATE CHAMPIONSHIP CLIMAX 🏆</span>
+                  </div>
+                ) : currentRoundIndex === 2 ? (
+                  <div className="inline-flex items-center space-x-2 bg-amber-500/20 border border-amber-500/50 text-amber-300 font-black text-xs px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">
+                    <span>⚡ CONFERENCE FINALS CLASH</span>
+                  </div>
+                ) : (
+                  <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
+                    {currentSeries.roundName.toUpperCase()} • BEST OF 7
+                  </span>
+                )}
+                <h3 className="text-xl sm:text-2xl font-black text-white pt-1">
                   {teamName} vs {currentSeries.oppTeam.franchise} ({currentSeries.oppTeam.year})
                 </h3>
               </div>
@@ -1035,7 +1051,11 @@ export default function HoopickPage() {
                     <button
                       onClick={handleSimulateNextGame}
                       disabled={isSimulatingLive}
-                      className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-40 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition"
+                      className={`w-full sm:w-auto px-6 py-3.5 disabled:opacity-40 hover:brightness-110 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition ${
+                        currentRoundIndex === 3
+                          ? 'bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600 text-white border border-amber-300 shadow-rose-500/30'
+                          : 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950'
+                      }`}
                     >
                       ⚡ {isSimulatingLive ? (locale === 'en' ? 'GAME IN PROGRESS...' : 'ĐANG ĐẤU REAL-TIME...') : locale === 'en' ? `SIMULATE GAME ${currentSeries.games.length + 1}` : `MÔ PHỎNG TRẬN ${currentSeries.games.length + 1}`}
                     </button>
@@ -1076,9 +1096,17 @@ export default function HoopickPage() {
             </div>
           )}
 
-          {/* BOX SCORE SECTION */}
+          {/* BOX SCORE SECTION WITH DYNAMIC STAGE BORDER */}
           {selectedGameForBoxScore && (
-            <div className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+            <div
+              className={`p-6 sm:p-8 rounded-3xl space-y-6 shadow-xl transition-all duration-500 ${
+                currentRoundIndex === 3
+                  ? 'border-2 border-amber-400/80 bg-slate-950 shadow-rose-500/20'
+                  : currentRoundIndex === 2
+                  ? 'border-2 border-amber-500/50 bg-slate-950'
+                  : 'glass-card border border-slate-800'
+              }`}
+            >
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-base font-black text-white">
                   📊 Game {selectedGameForBoxScore.gameNumber} Box Score ({selectedGameForBoxScore.myScore} - {selectedGameForBoxScore.oppScore})

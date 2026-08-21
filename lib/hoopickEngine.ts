@@ -53,8 +53,20 @@ export interface PlayoffSeriesResult {
 
 const POSITIONS: Position[] = ['PG', 'SG', 'SF', 'PF', 'C'];
 
-export function drawPackFromConference(conf: 'East' | 'West'): DrawnPlayerCard[] {
-  const pool = HOOPICK_TEAMS.filter((t) => t.conference === conf);
+export function drawPackFromConference(
+  conf: 'East' | 'West',
+  previousFranchise?: string
+): DrawnPlayerCard[] {
+  let pool = HOOPICK_TEAMS.filter((t) => t.conference === conf);
+
+  // Avoid drawing the exact same franchise twice in a row if alternatives exist
+  if (previousFranchise) {
+    const filteredPool = pool.filter((t) => t.franchise !== previousFranchise);
+    if (filteredPool.length > 0) {
+      pool = filteredPool;
+    }
+  }
+
   const selectedTeam = pool[Math.floor(Math.random() * pool.length)];
 
   return POSITIONS.map((pos, idx) => {
@@ -101,12 +113,6 @@ export function generatePlayoffOpponents(userConf: 'East' | 'West'): {
   };
 }
 
-/**
- * Increased Difficulty Simulation Engine
- * - Playoff opponent defensive intensity & home court boost (+4.5 OVR).
- * - Higher OVR legendary rosters dominate; average user teams (78-83 OVR) face fierce resistance against 93-98 OVR teams.
- * - 80 Granular Timeline Frames (20 frames per quarter) for high-precision live ticking.
- */
 export function simulateSingleGame(
   myTeam: Record<Position, HoopickPlayer | null>,
   oppTeam: HoopickTeam,
@@ -115,11 +121,9 @@ export function simulateSingleGame(
   const myOvr = calculateDraftTeamOverall(myTeam);
   const oppOvr = teamOverallRating(oppTeam);
 
-  // Playoff opponent home-court & playoff intensity (+4.5 OVR)
   const effectiveOppOvr = oppOvr + 4.5;
   const ovrDiff = myOvr - effectiveOppOvr;
 
-  // Dynamic game-to-game shooting luck variance (-12 to +12)
   const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 8.0;
   const oppLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 8.0;
 
@@ -133,7 +137,6 @@ export function simulateSingleGame(
 
   const winner = myTotalScore > oppTotalScore ? 'user' : 'opp';
 
-  // Generate 80 Granular Timeline Frames (20 per quarter)
   const timeline: TimelineFrame[] = [];
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
   const clockLabels20 = [
@@ -171,7 +174,6 @@ export function simulateSingleGame(
     }
   }
 
-  // Generate Box Scores
   const myPlayers = POSITIONS.map((pos) => {
     const p = myTeam[pos];
     return {

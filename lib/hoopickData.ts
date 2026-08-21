@@ -60,6 +60,7 @@ export const TEAM_META: Record<string, TeamMeta> = {
   'Sacramento Kings': { abbr: 'SAC', color: '#5A2D81', text: '#63727A' },
   'Utah Jazz': { abbr: 'UTA', color: '#002B5C', text: '#F9A01B' },
   'Charlotte Bobcats': { abbr: 'CHA', color: '#F26522', text: '#002B5C' },
+  'New Jersey Nets': { abbr: 'NJN', color: '#002B5C', text: '#C4CED4' },
 };
 
 // Versatile players who can play multiple positions
@@ -84,6 +85,12 @@ export const VERSATILE_POSITIONS: Record<string, Position[]> = {
   'James Harden': ['SG', 'PG'],
   'Paul Pierce': ['SF', 'SG'],
   'Ben Simmons': ['PG', 'PF'],
+  'Kobe Bryant': ['SG', 'SF'],
+  'Shaquille O\'Neal': ['C'],
+  'Kyrie Irving': ['PG', 'SG'],
+  'Jimmy Butler': ['SF', 'SG'],
+  'Devin Booker': ['SG', 'PG'],
+  'Paul George': ['SF', 'SG'],
 };
 
 export function eligiblePositions(playerName: string, primaryPos: Position): Position[] {
@@ -300,6 +307,85 @@ export const HOOPICK_TEAMS: HoopickTeam[] = [
       C: { n: 'Kristaps Porzingis', o: 86 },
     },
   },
+  // --- NEW SUPER-STRONG TEAMS (>=1 Icon) ---
+  {
+    franchise: 'L.A. Lakers',
+    year: '2000',
+    conference: 'West',
+    tier: 'Legendary',
+    roster: {
+      PG: { n: 'Ron Harper', o: 74 },
+      SG: { n: 'Kobe Bryant', o: 93 },
+      SF: { n: 'Glen Rice', o: 78 },
+      PF: { n: 'A.C. Green', o: 72 },
+      C: { n: 'Shaquille O\'Neal', o: 97 },
+    },
+  },
+  {
+    franchise: 'Houston Rockets',
+    year: '2018',
+    conference: 'West',
+    tier: 'Legendary',
+    roster: {
+      PG: { n: 'Chris Paul', o: 92 },
+      SG: { n: 'James Harden', o: 96 },
+      SF: { n: 'Trevor Ariza', o: 76 },
+      PF: { n: 'P.J. Tucker', o: 76 },
+      C: { n: 'Clint Capela', o: 84 },
+    },
+  },
+  {
+    franchise: 'San Antonio Spurs',
+    year: '2003',
+    conference: 'West',
+    tier: 'Legendary',
+    roster: {
+      PG: { n: 'Tony Parker', o: 86 },
+      SG: { n: 'Stephen Jackson', o: 76 },
+      SF: { n: 'Bruce Bowen', o: 76 },
+      PF: { n: 'Tim Duncan', o: 97 },
+      C: { n: 'David Robinson', o: 80 },
+    },
+  },
+  {
+    franchise: 'Chicago Bulls',
+    year: '1993',
+    conference: 'East',
+    tier: 'Legendary',
+    roster: {
+      PG: { n: 'BJ Armstrong', o: 76 },
+      SG: { n: 'Michael Jordan', o: 99 },
+      SF: { n: 'Scottie Pippen', o: 94 },
+      PF: { n: 'Horace Grant', o: 82 },
+      C: { n: 'Bill Cartwright', o: 70 },
+    },
+  },
+  {
+    franchise: 'Miami Heat',
+    year: '2012',
+    conference: 'East',
+    tier: 'Legendary',
+    roster: {
+      PG: { n: 'Mario Chalmers', o: 72 },
+      SG: { n: 'Dwyane Wade', o: 92 },
+      SF: { n: 'LeBron James', o: 97 },
+      PF: { n: 'Shane Battier', o: 74 },
+      C: { n: 'Chris Bosh', o: 88 },
+    },
+  },
+  {
+    franchise: 'Boston Celtics',
+    year: '1985',
+    conference: 'East',
+    tier: 'Legendary',
+    roster: {
+      PG: { n: 'Dennis Johnson', o: 80 },
+      SG: { n: 'Danny Ainge', o: 76 },
+      SF: { n: 'Larry Bird', o: 97 },
+      PF: { n: 'Kevin McHale', o: 89 },
+      C: { n: 'Robert Parish', o: 86 },
+    },
+  },
 
   // --- CONTENDER TIER ---
   {
@@ -510,6 +596,111 @@ export const HOOPICK_TEAMS: HoopickTeam[] = [
       C: { n: 'Rudy Gobert', o: 84 },
     },
   },
+  // --- NEW STRONG TEAMS (>1 Elite) ---
+  {
+    franchise: 'L.A. Lakers',
+    year: '2020',
+    conference: 'West',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Kentavious Caldwell-Pope', o: 76 },
+      SG: { n: 'Danny Green', o: 74 },
+      SF: { n: 'LeBron James', o: 96 },
+      PF: { n: 'Anthony Davis', o: 94 },
+      C: { n: 'JaVale McGee', o: 72 },
+    },
+  },
+  {
+    franchise: 'L.A. Clippers',
+    year: '2020',
+    conference: 'West',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Patrick Beverley', o: 76 },
+      SG: { n: 'Paul George', o: 90 },
+      SF: { n: 'Kawhi Leonard', o: 94 },
+      PF: { n: 'Marcus Morris', o: 76 },
+      C: { n: 'Ivica Zubac', o: 74 },
+    },
+  },
+  {
+    franchise: 'San Antonio Spurs',
+    year: '2014',
+    conference: 'West',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Tony Parker', o: 88 },
+      SG: { n: 'Danny Green', o: 76 },
+      SF: { n: 'Kawhi Leonard', o: 91 },
+      PF: { n: 'Tim Duncan', o: 89 },
+      C: { n: 'Tiago Splitter', o: 72 },
+    },
+  },
+  {
+    franchise: 'Phoenix Suns',
+    year: '2024',
+    conference: 'West',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Devin Booker', o: 92 },
+      SG: { n: 'Bradley Beal', o: 84 },
+      SF: { n: 'Grayson Allen', o: 76 },
+      PF: { n: 'Kevin Durant', o: 95 },
+      C: { n: 'Jusuf Nurkic', o: 76 },
+    },
+  },
+  {
+    franchise: 'Miami Heat',
+    year: '2006',
+    conference: 'East',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Jason Williams', o: 76 },
+      SG: { n: 'Dwyane Wade', o: 95 },
+      SF: { n: 'Antoine Walker', o: 78 },
+      PF: { n: 'Udonis Haslem', o: 74 },
+      C: { n: 'Shaquille O\'Neal', o: 90 },
+    },
+  },
+  {
+    franchise: 'New Jersey Nets',
+    year: '2002',
+    conference: 'East',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Jason Kidd', o: 93 },
+      SG: { n: 'Kerry Kittles', o: 76 },
+      SF: { n: 'Richard Jefferson', o: 78 },
+      PF: { n: 'Kenyon Martin', o: 84 },
+      C: { n: 'Todd MacCulloch', o: 68 },
+    },
+  },
+  {
+    franchise: 'Miami Heat',
+    year: '2023',
+    conference: 'East',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Gabe Vincent', o: 76 },
+      SG: { n: 'Max Strus', o: 74 },
+      SF: { n: 'Jimmy Butler', o: 93 },
+      PF: { n: 'Kevin Love', o: 74 },
+      C: { n: 'Bam Adebayo', o: 88 },
+    },
+  },
+  {
+    franchise: 'Milwaukee Bucks',
+    year: '2019',
+    conference: 'East',
+    tier: 'Contender',
+    roster: {
+      PG: { n: 'Eric Bledsoe', o: 80 },
+      SG: { n: 'Malcolm Brogdon', o: 80 },
+      SF: { n: 'Khris Middleton', o: 86 },
+      PF: { n: 'Giannis Antetokounmpo', o: 95 },
+      C: { n: 'Brook Lopez', o: 76 },
+    },
+  },
 
   // --- SOLID PLAYOFF TIER ---
   {
@@ -692,6 +883,85 @@ export const HOOPICK_TEAMS: HoopickTeam[] = [
       SF: { n: 'Luguentz Dort', o: 78 },
       PF: { n: 'Jalen Williams', o: 84 },
       C: { n: 'Chet Holmgren', o: 84 },
+    },
+  },
+  // --- NEW AVERAGE & PLAY-IN TEAMS ---
+  {
+    franchise: 'Memphis Grizzlies',
+    year: '2022',
+    conference: 'West',
+    tier: 'Playoff',
+    roster: {
+      PG: { n: 'Ja Morant', o: 91 },
+      SG: { n: 'Desmond Bane', o: 84 },
+      SF: { n: 'Dillon Brooks', o: 76 },
+      PF: { n: 'Jaren Jackson Jr.', o: 85 },
+      C: { n: 'Steven Adams', o: 78 },
+    },
+  },
+  {
+    franchise: 'Portland Trail Blazers',
+    year: '2021',
+    conference: 'West',
+    tier: 'Playoff',
+    roster: {
+      PG: { n: 'Damian Lillard', o: 92 },
+      SG: { n: 'CJ McCollum', o: 84 },
+      SF: { n: 'Norman Powell', o: 78 },
+      PF: { n: 'Robert Covington', o: 74 },
+      C: { n: 'Jusuf Nurkic', o: 78 },
+    },
+  },
+  {
+    franchise: 'Golden State Warriors',
+    year: '2021',
+    conference: 'West',
+    tier: 'Playoff',
+    roster: {
+      PG: { n: 'Stephen Curry', o: 95 },
+      SG: { n: 'Kent Bazemore', o: 70 },
+      SF: { n: 'Andrew Wiggins', o: 78 },
+      PF: { n: 'Draymond Green', o: 80 },
+      C: { n: 'Kevon Looney', o: 72 },
+    },
+  },
+  {
+    franchise: 'New York Knicks',
+    year: '2023',
+    conference: 'East',
+    tier: 'Playoff',
+    roster: {
+      PG: { n: 'Jalen Brunson', o: 90 },
+      SG: { n: 'Quentin Grimes', o: 74 },
+      SF: { n: 'RJ Barrett', o: 78 },
+      PF: { n: 'Julius Randle', o: 85 },
+      C: { n: 'Mitchell Robinson', o: 76 },
+    },
+  },
+  {
+    franchise: 'Atlanta Hawks',
+    year: '2021',
+    conference: 'East',
+    tier: 'Playoff',
+    roster: {
+      PG: { n: 'Trae Young', o: 90 },
+      SG: { n: 'Bogdan Bogdanovic', o: 78 },
+      SF: { n: 'Kevin Huerter', o: 74 },
+      PF: { n: 'John Collins', o: 82 },
+      C: { n: 'Clint Capela', o: 82 },
+    },
+  },
+  {
+    franchise: 'Washington Wizards',
+    year: '2021',
+    conference: 'East',
+    tier: 'Playoff',
+    roster: {
+      PG: { n: 'Russell Westbrook', o: 86 },
+      SG: { n: 'Bradley Beal', o: 88 },
+      SF: { n: 'Rui Hachimura', o: 74 },
+      PF: { n: 'Davis Bertans', o: 70 },
+      C: { n: 'Alex Len', o: 68 },
     },
   },
 ];
