@@ -20,13 +20,13 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 font-medium leading-normal max-w-sm">
-              BuzzerBet is a community NBA 2026-27 prediction and score synchronization hub.
+              BuzzerBet is a community NBA 2026-27 prediction, historical draft minigame, and score synchronization hub.
             </p>
           </div>
 
           {/* Quick Links Column */}
-          <div className="flex flex-col items-center space-y-3">
-            <div className="flex flex-wrap justify-center gap-6 text-xs font-extrabold text-slate-300 dark:text-slate-300 light:text-slate-700">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="flex flex-wrap justify-center items-center gap-5 text-xs font-extrabold text-slate-300 dark:text-slate-300 light:text-slate-700">
               <Link href="/regular-season" className="hover:text-amber-400 transition">
                 {t.navRegular}
               </Link>
@@ -38,6 +38,10 @@ export default function Footer() {
               </Link>
               <Link href="/stats" className="hover:text-amber-400 transition">
                 {t.navLeaderboard}
+              </Link>
+              <Link href="/hoopick" className="text-amber-400 hover:text-amber-300 transition flex items-center space-x-1 font-black bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/30">
+                <span>🎮</span>
+                <span>{t.navHoopick}</span>
               </Link>
             </div>
             {/* Ko-fi Footer Badge */}
