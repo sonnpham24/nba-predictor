@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import KofiButton from '@/components/KofiButton';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
@@ -53,18 +54,19 @@ export default function SettingsPage() {
       ]);
 
       if (uRes.ok) {
-        const userData = await uRes.json();
-        setUser(userData);
-        setDisplayName(userData.displayName || '');
-        setBio(userData.bio || '');
-        setFavoriteTeamId(userData.favoriteTeamId ? userData.favoriteTeamId.toString() : '');
-        setAvatarPreview(userData.avatar || null);
+        const uData = await uRes.json();
+        setUser(uData);
+        setDisplayName(uData.displayName || '');
+        setBio(uData.bio || '');
+        setFavoriteTeamId(uData.favoriteTeamId ? String(uData.favoriteTeamId) : '');
       }
+
       if (tRes.ok) {
-        setTeams(await tRes.json());
+        const tData = await tRes.json();
+        setTeams(tData);
       }
     } catch (err: any) {
-      toast.error('Error loading settings');
+      toast.error(err.message || 'Error loading settings data');
     } finally {
       setLoading(false);
     }
@@ -73,14 +75,14 @@ export default function SettingsPage() {
   const loadHistory = async (page: number) => {
     setLoadingHistory(true);
     try {
-      const res = await fetch(`/api/me/predictions?page=${page}&limit=5`);
+      const res = await fetch(`/api/me/predictions?page=${page}&limit=10`);
       if (res.ok) {
         const data = await res.json();
         setHistoryList(data.predictions || []);
-        setHistoryTotalPages(data.pagination?.totalPages || 1);
+        setHistoryTotalPages(data.totalPages || 1);
       }
     } catch (err: any) {
-      console.error(err);
+      toast.error('Error loading prediction history');
     } finally {
       setLoadingHistory(false);
     }
@@ -89,7 +91,6 @@ export default function SettingsPage() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingProfile(true);
-
     try {
       const res = await fetch('/api/me/profile', {
         method: 'PUT',
@@ -102,9 +103,9 @@ export default function SettingsPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save profile');
+      if (!res.ok) throw new Error(data.error || 'Failed to update profile');
 
-      toast.success(locale === 'en' ? '✅ Profile updated successfully!' : '✅ Đã lưu thông tin hồ sơ thành công!');
+      toast.success(locale === 'en' ? '✅ Profile updated successfully!' : '✅ Cập nhật thông tin thành công!');
       loadData();
     } catch (err: any) {
       toast.error(err.message);
@@ -113,35 +114,46 @@ export default function SettingsPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(locale === 'en' ? 'Image file size must be less than 5MB' : 'Kích thước ảnh phải nhỏ hơn 5MB');
+      return;
     }
+
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUploadAvatar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!avatarFile) {
-      toast.error(locale === 'en' ? 'Please select an image file first' : 'Vui lòng chọn 1 file ảnh trước!');
+      toast.error(locale === 'en' ? 'Please select an image file first' : 'Vui lòng chọn 1 tệp ảnh');
       return;
     }
 
     setUploadingAvatar(true);
-    const formData = new FormData();
-    formData.append('file', avatarFile);
-
     try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
       const res = await fetch('/api/me/avatar', {
         method: 'POST',
         body: formData,
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Avatar upload failed');
+      if (!res.ok) throw new Error(data.error || 'Failed to upload avatar');
 
-      toast.success(locale === 'en' ? '🖼️ Avatar uploaded successfully!' : '🖼️ Tải ảnh đại diện thành công!');
+      toast.success(locale === 'en' ? '✅ Avatar uploaded successfully!' : '✅ Tải ảnh đại diện thành công!');
+      setAvatarFile(null);
+      setAvatarPreview(null);
       loadData();
     } catch (err: any) {
       toast.error(err.message);
@@ -153,7 +165,7 @@ export default function SettingsPage() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmNewPassword) {
-      toast.error(locale === 'en' ? 'New passwords do not match!' : 'Mật khẩu mới xác nhận không khớp!');
+      toast.error(locale === 'en' ? 'New passwords do not match' : 'Mật khẩu mới không trùng khớp');
       return;
     }
 
@@ -162,13 +174,13 @@ export default function SettingsPage() {
       const res = await fetch('/api/me/password', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ oldPassword, newPassword, confirmNewPassword }),
+        body: JSON.stringify({ oldPassword, newPassword }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update password');
 
-      toast.success(data.message || (locale === 'en' ? 'Password updated!' : 'Đã đổi mật khẩu thành công!'));
+      toast.success(locale === 'en' ? '✅ Password changed successfully!' : '✅ Đổi mật khẩu thành công!');
       setOldPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
@@ -181,20 +193,20 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto py-24 flex justify-center items-center">
+      <div className="flex justify-center items-center py-24">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
+    <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       {/* Header Banner */}
-      <div className="text-center max-w-2xl mx-auto mb-10">
+      <div className="text-center max-w-2xl mx-auto">
         <div className="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1 rounded-full text-xs font-black text-amber-400 uppercase tracking-widest mb-3">
-          <span>⚙️ ACCOUNT SETTINGS</span>
+          <span>⚙️ ACCOUNT PREFERENCES</span>
         </div>
-        <h1 className="text-3xl sm:text-5xl font-black gradient-text-gold tracking-tight uppercase leading-normal break-words">
+        <h1 className="text-3xl sm:text-4xl font-black text-white leading-normal break-words">
           {t.settingsTitle}
         </h1>
         <p className="text-slate-400 text-sm mt-2 font-medium leading-normal break-words">
@@ -202,8 +214,45 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {/* Profile Overview Card */}
+      {user && (
+        <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 shadow-xl">
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.username}
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500 shadow-lg"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 font-black text-2xl flex items-center justify-center border-2 border-amber-400 shadow-lg">
+              {user.username.substring(0, 2).toUpperCase()}
+            </div>
+          )}
+
+          <div className="text-center sm:text-left space-y-1">
+            <div className="flex items-center justify-center sm:justify-start space-x-2">
+              <h2 className="text-xl font-black text-white leading-normal break-words">
+                {user.displayName || user.username}
+              </h2>
+              {user.isAdmin && (
+                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">
+                  {t.proAdmin}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 font-mono">@{user.username} • {user.email || 'No email'}</p>
+            {user.favoriteTeam && (
+              <div className="flex items-center justify-center sm:justify-start space-x-2 pt-1">
+                <img src={user.favoriteTeam.logo} alt={user.favoriteTeam.name} className="w-5 h-5 object-contain" />
+                <span className="text-xs font-bold text-amber-400">{user.favoriteTeam.name}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Tabs Switcher */}
-      <div className="flex overflow-x-auto space-x-2 border-b border-slate-800 pb-3 mb-8 scrollbar-none justify-center">
+      <div className="flex overflow-x-auto space-x-2 border-b border-slate-800 pb-3 scrollbar-none">
         {[
           { id: 'profile', label: t.tabProfile },
           { id: 'avatar', label: t.tabAvatar },
@@ -213,7 +262,7 @@ export default function SettingsPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-5 py-3 rounded-2xl font-black text-xs sm:text-sm whitespace-nowrap transition-all duration-300 ${
+            className={`px-5 py-3 rounded-2xl font-extrabold text-xs sm:text-sm whitespace-nowrap transition-all duration-300 ${
               activeTab === tab.id
                 ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg scale-105'
                 : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
@@ -224,7 +273,7 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* TAB 1: PROFILE & FAVORITE TEAM */}
+      {/* TAB 1: PROFILE & SUPPORTED TEAM */}
       {activeTab === 'profile' && (
         <form onSubmit={handleSaveProfile} className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
           <div>
@@ -242,6 +291,24 @@ export default function SettingsPage() {
 
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 leading-normal">
+              {t.favoriteTeamLabel}
+            </label>
+            <select
+              value={favoriteTeamId}
+              onChange={(e) => setFavoriteTeamId(e.target.value)}
+              className="w-full glass-input p-3.5 rounded-2xl text-sm font-semibold text-white"
+            >
+              <option value="" className="bg-slate-900">{t.selectFavoriteTeam}</option>
+              {teams.map((tm) => (
+                <option key={tm.id} value={tm.id} className="bg-slate-900">
+                  {tm.name} ({tm.abbreviation})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 leading-normal">
               {t.bioLabel}
             </label>
             <textarea
@@ -249,40 +316,8 @@ export default function SettingsPage() {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder={t.bioPlaceholder}
-              className="w-full glass-input p-3.5 rounded-2xl text-sm font-semibold"
+              className="w-full glass-input p-3.5 rounded-2xl text-sm font-medium"
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 leading-normal">
-              🏀 {t.favoriteTeamLabel}
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-72 overflow-y-auto p-2 bg-slate-950/80 border border-slate-800 rounded-2xl">
-              <div
-                onClick={() => setFavoriteTeamId('')}
-                className={`p-3 rounded-xl cursor-pointer transition border text-center flex flex-col items-center justify-center ${
-                  favoriteTeamId === ''
-                    ? 'border-amber-500 bg-amber-500/10 text-amber-400 font-bold'
-                    : 'border-slate-800 text-slate-500 hover:bg-slate-900'
-                }`}
-              >
-                <span className="text-xs">{t.noSupportedTeam}</span>
-              </div>
-              {teams.map((team) => (
-                <div
-                  key={team.id}
-                  onClick={() => setFavoriteTeamId(team.id.toString())}
-                  className={`p-3 rounded-xl cursor-pointer transition border text-center flex flex-col items-center justify-between ${
-                    favoriteTeamId === team.id.toString()
-                      ? 'border-amber-500 bg-amber-500/20 text-amber-400 font-bold shadow-lg scale-105'
-                      : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-300'
-                  }`}
-                >
-                  <img src={team.logo} alt={team.name} className="w-10 h-10 object-contain mb-1 drop-shadow" />
-                  <span className="text-[11px] font-bold leading-normal break-words">{team.name}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           <button
@@ -298,149 +333,140 @@ export default function SettingsPage() {
       {/* TAB 2: AVATAR UPLOAD */}
       {activeTab === 'avatar' && (
         <form onSubmit={handleUploadAvatar} className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6 text-center">
-          <div className="relative inline-block">
+          <div className="flex flex-col items-center justify-center space-y-4">
             {avatarPreview ? (
               <img
                 src={avatarPreview}
-                alt="Avatar preview"
-                className="w-36 h-36 rounded-full object-cover border-4 border-amber-500 shadow-2xl bg-slate-950 mx-auto"
+                alt="Preview"
+                className="w-32 h-32 rounded-3xl object-cover border-4 border-amber-500 shadow-2xl"
+              />
+            ) : user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.username}
+                className="w-32 h-32 rounded-3xl object-cover border-4 border-amber-500/50 shadow-xl"
               />
             ) : (
-              <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 font-black text-4xl flex items-center justify-center border-4 border-amber-400 shadow-2xl mx-auto">
-                {user?.username?.substring(0, 2).toUpperCase() || 'NB'}
+              <div className="w-32 h-32 rounded-3xl bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 font-black text-4xl flex items-center justify-center border-4 border-amber-400 shadow-xl">
+                {user?.username?.substring(0, 2).toUpperCase()}
               </div>
             )}
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 leading-normal">
-              Select Avatar Image File (PNG, JPG, WEBP)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full max-w-sm mx-auto glass-input p-3 rounded-2xl text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
-            />
+            <div>
+              <label className="inline-block px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black cursor-pointer border border-slate-700 transition">
+                <span>📁 Select Image File (PNG, JPG, WEBP &lt; 5MB)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFileChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={uploadingAvatar || !avatarFile}
-            className="w-full max-w-sm mx-auto py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase shadow-xl hover:scale-[1.02] transition duration-300 leading-normal"
+            className="w-full py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 disabled:opacity-40 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase shadow-xl hover:scale-[1.02] transition duration-300 leading-normal"
           >
             {uploadingAvatar ? 'UPLOADING...' : t.btnUploadAvatar}
           </button>
         </form>
       )}
 
-      {/* TAB 3: PREDICTION HISTORY (WITH PAGINATION) */}
+      {/* TAB 3: PREDICTION HISTORY & PAGINATION */}
       {activeTab === 'history' && (
         <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-            <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-wider leading-normal">
-                {t.historyTitle}
-              </h2>
-              <p className="text-xs text-slate-400 font-medium leading-normal">
-                {t.historySub}
-              </p>
-            </div>
-            <span className="text-xs font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl self-start sm:self-auto">
-              {t.pageOf} {historyPage} / {historyTotalPages}
-            </span>
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <h2 className="text-lg font-black text-white leading-normal">
+              {t.historyTitle}
+            </h2>
           </div>
 
           {loadingHistory ? (
-            <div className="py-16 flex justify-center items-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500"></div>
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
             </div>
           ) : historyList.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 text-sm font-semibold">
+            <div className="text-center py-8 text-slate-400 text-sm font-medium">
               {t.noPredictionsYet}
             </div>
           ) : (
-            <div className="space-y-4">
-              {historyList.map((item) => (
-                <div
-                  key={`${item.type}-${item.id}`}
-                  className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 hover:border-amber-500/30 transition"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        {item.teamALogo && <img src={item.teamALogo} alt={item.teamAName} className="w-8 h-8 object-contain" />}
-                        <span className="text-xs font-black text-white">{item.teamAName}</span>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                {historyList.map((p) => {
+                  const teamA = p.matchup.teamA ? p.matchup.teamA.name : (p.matchup.customTeamA || 'Team A');
+                  const teamB = p.matchup.teamB ? p.matchup.teamB.name : (p.matchup.customTeamB || 'Team B');
+                  const predictedName = p.predictedWinner ? p.predictedWinner.name : (p.customPredictedWinner || 'N/A');
+                  const actualWinnerName = p.matchup.actualWinner ? p.matchup.actualWinner.name : (p.matchup.customWinner || null);
+
+                  const isFinished = p.matchup.status === 'FINISHED';
+                  const isCorrect = isFinished && actualWinnerName && actualWinnerName.toLowerCase() === predictedName.toLowerCase();
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono"
+                    >
+                      <div className="space-y-1">
+                        <span className="text-slate-500 text-[10px]">
+                          Match #{p.matchup.id} • {new Date(p.matchup.startTime).toLocaleDateString(locale === 'en' ? 'en-US' : 'vi-VN')}
+                        </span>
+                        <div className="font-bold text-white text-sm font-sans">
+                          {teamA} vs {teamB}
+                        </div>
+                        <div className="text-slate-300">
+                          Your Pick: <strong className="text-amber-400">{predictedName}</strong>
+                        </div>
                       </div>
-                      <span className="text-xs font-black text-slate-600">VS</span>
-                      <div className="flex items-center space-x-2">
-                        {item.teamBLogo && <img src={item.teamBLogo} alt={item.teamBName} className="w-8 h-8 object-contain" />}
-                        <span className="text-xs font-black text-white">{item.teamBName}</span>
+
+                      <div className="flex items-center space-x-3">
+                        {isFinished ? (
+                          isCorrect ? (
+                            <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl font-black text-xs">
+                              ✅ CORRECT (+1 PT)
+                            </span>
+                          ) : (
+                            <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-xl font-black text-xs">
+                              ❌ INCORRECT (0 PT)
+                            </span>
+                          )
+                        ) : (
+                          <span className="bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1 rounded-xl font-bold text-xs">
+                            ⏳ PENDING RESULT
+                          </span>
+                        )}
                       </div>
                     </div>
-                    {item.type === 'PROP_YES_NO' && (
-                      <p className="text-[11px] text-slate-400 font-semibold leading-normal max-w-sm">
-                        YES/NO: <span className="text-slate-200">{item.question}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 text-xs">
-                    <span className="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl font-semibold">
-                      🗳️ {item.type === 'PROP_YES_NO' ? 'Vote' : 'Picked'}: <strong className="text-amber-400">{item.myPick}</strong>
-                    </span>
-
-                    {item.isSettled ? (
-                      item.isCorrect ? (
-                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-xl font-black uppercase">
-                          🟢 WON (+1 PT)
-                        </span>
-                      ) : (
-                        <span className="bg-red-500/20 text-red-400 border border-red-500/40 px-3 py-1.5 rounded-xl font-black uppercase">
-                          🔴 LOST (0 PT)
-                        </span>
-                      )
-                    ) : (
-                      <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-xl font-bold uppercase">
-                        ⏳ PENDING
-                      </span>
-                    )}
-
-                    {item.type === 'PROP_YES_NO' && item.resolvedOutcome && (
-                      <span className="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl font-semibold">
-                        Result: <strong className="text-white">{item.resolvedOutcome}</strong>
-                      </span>
-                    )}
-
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {new Date(item.startTime).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
 
               {/* Pagination Controls */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-                <button
-                  onClick={() => setHistoryPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={historyPage <= 1}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-xs font-black text-white rounded-xl border border-slate-800 transition"
-                >
-                  {t.prevPage}
-                </button>
-
-                <span className="text-xs text-slate-400 font-mono">
-                  {t.pageOf} <strong>{historyPage}</strong> / {historyTotalPages}
-                </span>
-
-                <button
-                  onClick={() => setHistoryPage((prev) => Math.min(prev + 1, historyTotalPages))}
-                  disabled={historyPage >= historyTotalPages}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-xs font-black text-white rounded-xl border border-slate-800 transition"
-                >
-                  {t.nextPage}
-                </button>
-              </div>
+              {historyTotalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                  <span className="text-xs text-slate-400 font-mono">
+                    {t.pageOf} {historyPage} / {historyTotalPages}
+                  </span>
+                  <div className="flex space-x-2">
+                    <button
+                      disabled={historyPage === 1}
+                      onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition"
+                    >
+                      {t.prevPage}
+                    </button>
+                    <button
+                      disabled={historyPage >= historyTotalPages}
+                      onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
+                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition"
+                    >
+                      {t.nextPage}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -448,7 +474,7 @@ export default function SettingsPage() {
 
       {/* TAB 4: PASSWORD CHANGE */}
       {activeTab === 'password' && (
-        <form onSubmit={handleChangePassword} className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-5 max-w-md mx-auto">
+        <form onSubmit={handleChangePassword} className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 leading-normal">
               {t.oldPasswordLabel}
@@ -502,6 +528,9 @@ export default function SettingsPage() {
           </button>
         </form>
       )}
+
+      {/* KO-FI SUPPORT BANNER */}
+      <KofiButton variant="banner" />
     </div>
   );
 }

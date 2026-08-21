@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useTheme } from '@/context/ThemeContext';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import KofiButton from '@/components/KofiButton';
 import toast from 'react-hot-toast';
 
 export default function Navbar() {
@@ -86,7 +87,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Right Action Controls: Language, Theme, User Auth */}
+          {/* Right Action Controls: Language, Theme, Ko-fi, User Auth */}
           <div className="hidden md:flex items-center space-x-3">
             {/* Language Switcher */}
             <button
@@ -105,6 +106,9 @@ export default function Navbar() {
             >
               {theme === 'dark' ? '🌙' : '☀️'}
             </button>
+
+            {/* Ko-fi Support Button */}
+            <KofiButton variant="navbar" />
 
             {/* User Account / Auth Buttons */}
             {user ? (
@@ -166,6 +170,7 @@ export default function Navbar() {
             >
               {theme === 'dark' ? '🌙' : '☀️'}
             </button>
+            <KofiButton variant="navbar" />
             {user && (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

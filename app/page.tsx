@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import KofiButton from '@/components/KofiButton';
 
 export default function LandingPage() {
   const { t, locale } = useLanguage();
@@ -19,11 +20,11 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-16">
       {/* Hero Section */}
       <div className="text-center max-w-4xl mx-auto space-y-8">
         <div className="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 px-4 py-1.5 rounded-full text-xs font-black text-amber-400 uppercase tracking-widest animate-pulse-glow">
-          <span>🏀 NBA 2025 PREDICTOR PLATFORM</span>
+          <span>🏀 NBA 2026-27 PREDICTOR PLATFORM</span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-normal uppercase">
@@ -71,7 +72,7 @@ export default function LandingPage() {
       </div>
 
       {/* Feature Grid Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Feature 1 */}
         <div className="glass-card p-8 rounded-3xl border border-white/10 hover:border-amber-500/40 transition duration-300 flex flex-col justify-between">
           <div>
@@ -105,6 +106,9 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* Ko-fi Support Banner Section */}
+      <KofiButton variant="banner" />
     </div>
   );
 }

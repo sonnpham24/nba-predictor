@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
+import KofiButton from '@/components/KofiButton';
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -24,19 +25,23 @@ export default function Footer() {
           </div>
 
           {/* Quick Links Column */}
-          <div className="flex flex-wrap justify-center gap-6 text-xs font-extrabold text-slate-300 dark:text-slate-300 light:text-slate-700">
-            <Link href="/regular-season" className="hover:text-amber-400 transition">
-              {t.navRegular}
-            </Link>
-            <Link href="/standings" className="hover:text-amber-400 transition">
-              {t.navStandings}
-            </Link>
-            <Link href="/teams" className="hover:text-amber-400 transition">
-              {t.navTeams}
-            </Link>
-            <Link href="/stats" className="hover:text-amber-400 transition">
-              {t.navLeaderboard}
-            </Link>
+          <div className="flex flex-col items-center space-y-3">
+            <div className="flex flex-wrap justify-center gap-6 text-xs font-extrabold text-slate-300 dark:text-slate-300 light:text-slate-700">
+              <Link href="/regular-season" className="hover:text-amber-400 transition">
+                {t.navRegular}
+              </Link>
+              <Link href="/standings" className="hover:text-amber-400 transition">
+                {t.navStandings}
+              </Link>
+              <Link href="/teams" className="hover:text-amber-400 transition">
+                {t.navTeams}
+              </Link>
+              <Link href="/stats" className="hover:text-amber-400 transition">
+                {t.navLeaderboard}
+              </Link>
+            </div>
+            {/* Ko-fi Footer Badge */}
+            <KofiButton variant="footer" />
           </div>
 
           {/* Developer Credit Column */}
