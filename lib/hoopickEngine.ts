@@ -101,6 +101,12 @@ export function generatePlayoffOpponents(userConf: 'East' | 'West'): {
   };
 }
 
+/**
+ * Increased Difficulty Game Simulation Engine
+ * - Playoff opponents have home-court & defensive intensity (+3.0 OVR advantage).
+ * - Higher OVR teams win consistently; mid-tier user teams (78-83 OVR) face tough challenge against 90+ OVR teams.
+ * - 40 Granular Timeline Frames (10 frames per quarter) for second-by-second live ticking.
+ */
 export function simulateSingleGame(
   myTeam: Record<Position, HoopickPlayer | null>,
   oppTeam: HoopickTeam,
@@ -109,13 +115,16 @@ export function simulateSingleGame(
   const myOvr = calculateDraftTeamOverall(myTeam);
   const oppOvr = teamOverallRating(oppTeam);
 
-  const ovrDiff = myOvr - oppOvr;
+  // Playoff opponent home-court & playoff intensity (+3 OVR)
+  const effectiveOppOvr = oppOvr + 3.0;
+  const ovrDiff = myOvr - effectiveOppOvr;
 
-  const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 12;
-  const oppLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 12;
+  // Moderate game shooting luck variance (-10 to +10)
+  const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 6.5;
+  const oppLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 6.5;
 
-  let myTotalScore = Math.max(80, Math.round(100 + ovrDiff * 1.2 + myLuck));
-  let oppTotalScore = Math.max(80, Math.round(100 - ovrDiff * 1.2 + oppLuck));
+  let myTotalScore = Math.max(78, Math.round(98 + ovrDiff * 1.45 + myLuck));
+  let oppTotalScore = Math.max(78, Math.round(101 - ovrDiff * 1.45 + oppLuck));
 
   if (myTotalScore === oppTotalScore) {
     if (Math.random() > 0.5) myTotalScore += 3;
@@ -124,43 +133,40 @@ export function simulateSingleGame(
 
   const winner = myTotalScore > oppTotalScore ? 'user' : 'opp';
 
-  // Generate a smooth 12-frame Granular Score Timeline for high-frequency live ticking
-  const steps = 12;
+  // Generate 40 Granular Timeline Frames (10 per quarter)
   const timeline: TimelineFrame[] = [];
-
-  const timeLabels = [
-    { q: 'Q1', c: '09:30' },
-    { q: 'Q1', c: '04:15' },
-    { q: 'Q1', c: '00:00' },
-    { q: 'Q2', c: '08:45' },
-    { q: 'Q2', c: '03:10' },
-    { q: 'Q2', c: '00:00' },
-    { q: 'Q3', c: '07:20' },
-    { q: 'Q3', c: '02:00' },
-    { q: 'Q3', c: '00:00' },
-    { q: 'Q4', c: '04:30' },
-    { q: 'Q4', c: '01:15' },
-    { q: 'Q4', c: '00:00 (BUZZER)' },
+  const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+  const clockLabels = [
+    '12:00', '10:48', '09:36', '08:24', '07:12',
+    '06:00', '04:48', '03:36', '02:24', '01:12'
   ];
 
-  for (let i = 0; i < steps; i++) {
-    const progress = (i + 1) / steps;
-    const isLast = i === steps - 1;
+  let frameCount = 0;
+  const totalFrames = 40;
 
-    // Gradual score accumulation
-    const mScore = isLast
-      ? myTotalScore
-      : Math.min(myTotalScore - 1, Math.round(myTotalScore * progress * (0.92 + Math.random() * 0.16)));
-    const oScore = isLast
-      ? oppTotalScore
-      : Math.min(oppTotalScore - 1, Math.round(oppTotalScore * progress * (0.92 + Math.random() * 0.16)));
+  for (let qIdx = 0; qIdx < 4; qIdx++) {
+    const qName = quarters[qIdx];
+    for (let cIdx = 0; cIdx < 10; cIdx++) {
+      frameCount++;
+      const progress = frameCount / totalFrames;
+      const isLast = frameCount === totalFrames;
 
-    timeline.push({
-      quarter: timeLabels[i].q,
-      clock: timeLabels[i].c,
-      myScore: Math.max(0, mScore),
-      oppScore: Math.max(0, oScore),
-    });
+      const clockText = isLast ? '00:00 (BUZZER)' : clockLabels[cIdx];
+
+      const mScore = isLast
+        ? myTotalScore
+        : Math.min(myTotalScore - 1, Math.round(myTotalScore * progress * (0.94 + Math.random() * 0.12)));
+      const oScore = isLast
+        ? oppTotalScore
+        : Math.min(oppTotalScore - 1, Math.round(oppTotalScore * progress * (0.94 + Math.random() * 0.12)));
+
+      timeline.push({
+        quarter: qName,
+        clock: clockText,
+        myScore: Math.max(0, mScore),
+        oppScore: Math.max(0, oScore),
+      });
+    }
   }
 
   // Generate Box Scores
