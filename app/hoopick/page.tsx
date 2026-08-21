@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   HoopickPlayer,
@@ -46,6 +46,7 @@ export default function HoopickPage() {
   const [currentPack, setCurrentPack] = useState<DrawnPlayerCard[] | null>(null);
   const [isOpeningPack, setIsOpeningPack] = useState<boolean>(false);
   const [isShakingPack, setIsShakingPack] = useState<boolean>(false);
+  const [isHypePack, setIsHypePack] = useState<boolean>(false);
   const [pickedCardId, setPickedCardId] = useState<string | null>(null);
   const [pickedPlayerNames, setPickedPlayerNames] = useState<Set<string>>(new Set());
 
@@ -97,45 +98,58 @@ export default function HoopickPage() {
     setGameStarted(true);
   };
 
-  // Realistic Pack Opening with Shake & Reveal
+  // REALISTIC PACK OPENING WITH HYPE ICON REVEAL & SHAKE
   const handleOpenPack = () => {
-    if (!conference) return;
-    if (packCount >= MAX_PACKS) {
+    if (!conference || isOpeningPack) return;
+    if (packCount >= MAX_PACKS && pickedCardId !== null) {
       toast.error(locale === 'en' ? 'You have opened all 5 packs!' : 'Bạn đã mở hết 5 gói bài!');
       return;
     }
 
+    // Pre-draw cards to check for Icon Hype
+    const cards = drawPackFromConference(conference);
+    const hasIcon = cards.some((c) => c.o >= 95);
+
     setIsShakingPack(true);
     setIsOpeningPack(true);
+    setIsHypePack(hasIcon);
+
+    const delay = hasIcon ? 1200 : 500;
 
     setTimeout(() => {
       setIsShakingPack(false);
-      const cards = drawPackFromConference(conference);
       setCurrentPack(cards);
       setPickedCardId(null);
-      setPackCount((prev) => prev + 1);
+      if (!currentPack || pickedCardId !== null) {
+        setPackCount((prev) => prev + 1);
+      }
       setIsOpeningPack(false);
-    }, 600);
+    }, delay);
   };
 
   const handleSkipPack = () => {
-    if (skipsLeft <= 0) {
-      toast.error(locale === 'en' ? 'No skips remaining!' : 'Bạn đã hết lượt Skip!');
+    if (skipsLeft <= 0 || isOpeningPack) {
+      if (skipsLeft <= 0) toast.error(locale === 'en' ? 'No skips remaining!' : 'Bạn đã hết lượt Skip!');
       return;
     }
     if (!conference) return;
 
+    const cards = drawPackFromConference(conference);
+    const hasIcon = cards.some((c) => c.o >= 95);
+
     setSkipsLeft((prev) => prev - 1);
     setIsShakingPack(true);
     setIsOpeningPack(true);
+    setIsHypePack(hasIcon);
+
+    const delay = hasIcon ? 1200 : 500;
 
     setTimeout(() => {
       setIsShakingPack(false);
-      const cards = drawPackFromConference(conference);
       setCurrentPack(cards);
       setPickedCardId(null);
       setIsOpeningPack(false);
-    }, 600);
+    }, delay);
   };
 
   const handlePickPlayer = (card: DrawnPlayerCard, targetPos: Position) => {
@@ -166,7 +180,6 @@ export default function HoopickPage() {
 
     setPickedCardId(card.cardId);
 
-    // Only notify when 5 positions complete
     const newFilledCount = Object.values(newTeam).filter((p) => p !== null).length;
     if (newFilledCount === 5) {
       toast.success(locale === 'en' ? '🎉 Your Starting Five is complete! Ready for Playoffs!' : '🎉 Đội hình 5 người đã hoàn tất! Sẵn sàng đấu Playoff!');
@@ -201,55 +214,47 @@ export default function HoopickPage() {
     setSelectedGameForBoxScore(null);
     setLiveMyScore(0);
     setLiveOppScore(0);
-    setLiveClock('02:00');
+    setLiveClock('12:00');
+    setLiveQuarterLabel('Q1');
   };
 
-  // REAL-TIME DIGITAL CLOCK & SCORE TICKING ANIMATION
+  // HIGH-FREQUENCY REAL-TIME TICKING ANIMATION FOR A SINGLE GAME
+  const animateGameSingle = (
+    gameRes: PlayoffGameResult,
+    onComplete: (res: PlayoffGameResult) => void
+  ) => {
+    setIsSimulatingLive(true);
+    const { timeline } = gameRes;
+    let step = 0;
+
+    const interval = setInterval(() => {
+      if (step < timeline.length) {
+        const frame = timeline[step];
+        setLiveQuarterLabel(frame.quarter);
+        setLiveClock(frame.clock);
+        setLiveMyScore(frame.myScore);
+        setLiveOppScore(frame.oppScore);
+        step++;
+      } else {
+        clearInterval(interval);
+        setIsSimulatingLive(false);
+        onComplete(gameRes);
+      }
+    }, 140);
+  };
+
   const handleSimulateNextGame = () => {
     if (!currentSeries || currentSeries.isOver || isSimulatingLive) return;
 
     const gameNum = currentSeries.games.length + 1;
     const gameRes = simulateSingleGame(myTeam, currentSeries.oppTeam, gameNum);
 
-    setIsSimulatingLive(true);
-    setLiveQuarterLabel('Q1');
-    setLiveClock('12:00');
-    setLiveMyScore(gameRes.quarters.q1[0]);
-    setLiveOppScore(gameRes.quarters.q1[1]);
-
-    // Animate quarters progression Q1 -> Q2 -> Q3 -> Q4 Countdown
-    setTimeout(() => {
-      setLiveQuarterLabel('Q2');
-      setLiveClock('06:00');
-      setLiveMyScore(gameRes.quarters.q2[0]);
-      setLiveOppScore(gameRes.quarters.q2[1]);
-    }, 700);
-
-    setTimeout(() => {
-      setLiveQuarterLabel('Q3');
-      setLiveClock('03:00');
-      setLiveMyScore(gameRes.quarters.q3[0]);
-      setLiveOppScore(gameRes.quarters.q3[1]);
-    }, 1400);
-
-    setTimeout(() => {
-      setLiveQuarterLabel('Q4');
-      setLiveClock('01:00');
-      setLiveMyScore(Math.round(gameRes.myScore * 0.95));
-      setLiveOppScore(Math.round(gameRes.oppScore * 0.95));
-    }, 2100);
-
-    setTimeout(() => {
-      setLiveQuarterLabel('Q4');
-      setLiveClock('00:00 (BUZZER)');
-      setLiveMyScore(gameRes.myScore);
-      setLiveOppScore(gameRes.oppScore);
-
-      const newMyWins = currentSeries.myWins + (gameRes.winner === 'user' ? 1 : 0);
-      const newOppWins = currentSeries.oppWins + (gameRes.winner === 'opp' ? 1 : 0);
+    animateGameSingle(gameRes, (res) => {
+      const newMyWins = currentSeries.myWins + (res.winner === 'user' ? 1 : 0);
+      const newOppWins = currentSeries.oppWins + (res.winner === 'opp' ? 1 : 0);
       const isOver = newMyWins === 4 || newOppWins === 4;
 
-      const updatedGames = [...currentSeries.games, gameRes];
+      const updatedGames = [...currentSeries.games, res];
       setCurrentSeries({
         ...currentSeries,
         myWins: newMyWins,
@@ -257,8 +262,7 @@ export default function HoopickPage() {
         games: updatedGames,
         isOver,
       });
-      setSelectedGameForBoxScore(gameRes);
-      setIsSimulatingLive(false);
+      setSelectedGameForBoxScore(res);
 
       if (isOver) {
         if (newMyWins === 4) {
@@ -267,29 +271,68 @@ export default function HoopickPage() {
           toast.error(`❌ Eliminated in ${currentSeries.roundName} (4-${newMyWins}). Better luck next time!`);
         }
       }
-    }, 2800);
+    });
   };
 
-  const handleSimulateFullSeries = () => {
+  // SIMULATE ENTIRE SERIES WITH CONTINUOUS GAME TICKING + PAUSE AT END OF EACH GAME
+  const handleSimulateFullSeries = async () => {
     if (!currentSeries || currentSeries.isOver || isSimulatingLive) return;
 
     const seriesRes = simulateFullSeries(myTeam, currentSeries.oppTeam, currentSeries.roundName);
 
-    setCurrentSeries({
-      ...currentSeries,
-      myWins: seriesRes.myWins,
-      oppWins: seriesRes.oppWins,
-      games: seriesRes.games,
-      isOver: true,
-    });
+    setIsSimulatingLive(true);
 
-    if (seriesRes.games.length > 0) {
-      const lastGame = seriesRes.games[seriesRes.games.length - 1];
-      setSelectedGameForBoxScore(lastGame);
-      setLiveMyScore(lastGame.myScore);
-      setLiveOppScore(lastGame.oppScore);
-      setLiveClock('00:00 (BUZZER)');
+    let myWinsAcc = 0;
+    let oppWinsAcc = 0;
+    const playedGames: PlayoffGameResult[] = [];
+
+    for (let gIdx = 0; gIdx < seriesRes.games.length; gIdx++) {
+      const gameRes = seriesRes.games[gIdx];
+
+      // Run fast 12-frame ticking for this game
+      await new Promise<void>((resolve) => {
+        let step = 0;
+        const interval = setInterval(() => {
+          if (step < gameRes.timeline.length) {
+            const frame = gameRes.timeline[step];
+            setLiveQuarterLabel(frame.quarter);
+            setLiveClock(frame.clock);
+            setLiveMyScore(frame.myScore);
+            setLiveOppScore(frame.oppScore);
+            step++;
+          } else {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 70);
+      });
+
+      // Update series wins accumulator
+      if (gameRes.winner === 'user') myWinsAcc++;
+      else oppWinsAcc++;
+
+      playedGames.push(gameRes);
+
+      setCurrentSeries((prev) =>
+        prev
+          ? {
+              ...prev,
+              myWins: myWinsAcc,
+              oppWins: oppWinsAcc,
+              games: [...playedGames],
+              isOver: gIdx === seriesRes.games.length - 1,
+            }
+          : null
+      );
+      setSelectedGameForBoxScore(gameRes);
+
+      // Pause 1 second at the end of each game to appreciate score & series tally
+      if (gIdx < seriesRes.games.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 900));
+      }
     }
+
+    setIsSimulatingLive(false);
 
     if (seriesRes.winner === 'user') {
       toast.success(`🎉 Won the ${currentSeries.roundName} (${seriesRes.myWins}-${seriesRes.oppWins})!`);
@@ -375,7 +418,7 @@ export default function HoopickPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
-      {/* Custom Styles for Pack Shake & Card Pop animations */}
+      {/* Keyframe animations for metallic shine, shake & hype glow */}
       <style jsx global>{`
         @keyframes packShine {
           0% { background-position: 0% 0%; }
@@ -383,25 +426,32 @@ export default function HoopickPage() {
         }
         @keyframes packShake {
           0%, 100% { transform: translateX(0) rotate(0deg); }
-          20% { transform: translateX(-6px) rotate(-2deg); }
-          40% { transform: translateX(6px) rotate(2deg); }
-          60% { transform: translateX(-4px) rotate(-1deg); }
-          80% { transform: translateX(4px) rotate(1deg); }
+          20% { transform: translateX(-8px) rotate(-3deg); }
+          40% { transform: translateX(8px) rotate(3deg); }
+          60% { transform: translateX(-5px) rotate(-1.5deg); }
+          80% { transform: translateX(5px) rotate(1.5deg); }
         }
         @keyframes cardPopIn {
-          0% { transform: scale(0.7) translateY(20px); opacity: 0; }
+          0% { transform: scale(0.65) translateY(24px); opacity: 0; }
           100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        @keyframes hypeGlow {
+          0%, 100% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6), 0 0 60px rgba(225, 29, 72, 0.4); }
+          50% { box-shadow: 0 0 50px rgba(245, 158, 11, 0.9), 0 0 90px rgba(168, 85, 247, 0.7); }
         }
         .animate-pack-shine::before {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(115deg, transparent 30%, rgba(245, 158, 11, 0.25) 48%, rgba(251, 191, 36, 0.4) 50%, rgba(245, 158, 11, 0.25) 52%, transparent 70%);
+          background: linear-gradient(115deg, transparent 30%, rgba(245, 158, 11, 0.3) 48%, rgba(251, 191, 36, 0.5) 50%, rgba(245, 158, 11, 0.3) 52%, transparent 70%);
           background-size: 260% 260%;
           animation: packShine 3.2s linear infinite;
         }
         .animate-pack-shake {
-          animation: packShake 0.5s ease;
+          animation: packShake 0.5s ease infinite;
+        }
+        .animate-hype-glow {
+          animation: hypeGlow 1s infinite alternate;
         }
         .animate-card-pop {
           animation: cardPopIn 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
@@ -531,72 +581,73 @@ export default function HoopickPage() {
       {/* STEP 2: PACK OPENING & SELECTION ZONE */}
       {gameStarted && !playoffMode && (
         <div className="space-y-8">
-          {/* REALISTIC 3D SHINING PACK CONTAINER */}
-          <div className="flex flex-col items-center justify-center space-y-6 glass-card p-8 rounded-3xl border border-slate-800 text-center">
-            {/* Physical Metallic Pack Card */}
+          {/* REALISTIC CLICKABLE 3D PACK CONTAINER */}
+          <div className="flex flex-col items-center justify-center space-y-6 glass-card p-8 rounded-3xl border border-slate-800 text-center relative overflow-hidden">
+            {/* Hype Pack Flare Banner */}
+            {isHypePack && isOpeningPack && (
+              <div className="absolute top-4 bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white text-xs font-black px-6 py-1.5 rounded-full uppercase tracking-widest shadow-xl animate-bounce z-30">
+                ✨ ICON SUPERSTAR PACK REVEAL! ✨
+              </div>
+            )}
+
+            {/* Clickable Physical Pack Card */}
             <div
               onClick={handleOpenPack}
-              className={`w-44 h-60 rounded-2xl cursor-pointer bg-gradient-to-b from-white via-slate-100 to-slate-200 border-2 border-slate-300 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition duration-300 hover:-translate-y-1.5 animate-pack-shine ${
+              className={`w-48 h-64 rounded-3xl cursor-pointer bg-gradient-to-b from-white via-slate-100 to-slate-200 border-4 border-slate-300 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition duration-300 hover:scale-105 active:scale-95 animate-pack-shine ${
                 isShakingPack ? 'animate-pack-shake' : ''
-              }`}
+              } ${isHypePack && isOpeningPack ? 'animate-hype-glow ring-4 ring-amber-400' : ''}`}
             >
-              {currentPack ? (
-                <div className="space-y-2 z-10 px-2 animate-card-pop">
+              {currentPack && !isOpeningPack ? (
+                <div className="space-y-3 z-10 px-2 animate-card-pop">
                   <div
-                    className="w-16 h-16 rounded-full mx-auto flex items-center justify-center shadow-lg border border-black/10"
+                    className="w-20 h-20 rounded-full mx-auto flex items-center justify-center shadow-xl border-2 border-black/10"
                     style={{
                       backgroundColor: TEAM_META[currentPack[0].t]?.color || '#1D428A',
                     }}
                   >
                     <span
-                      className="font-black text-xl font-mono"
+                      className="font-black text-2xl font-mono"
                       style={{ color: TEAM_META[currentPack[0].t]?.text || '#FFFFFF' }}
                     >
                       {TEAM_META[currentPack[0].t]?.abbr || 'NBA'}
                     </span>
                   </div>
-                  <div className="font-black text-slate-900 text-base leading-tight uppercase truncate max-w-[150px]">
+                  <div className="font-black text-slate-900 text-lg leading-tight uppercase truncate max-w-[160px]">
                     {currentPack[0].t}
                   </div>
-                  <div className="font-mono text-xs font-black text-amber-600">
+                  <div className="font-mono text-xs font-black text-amber-600 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 inline-block">
                     '{currentPack[0].e} SEASON
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2 z-10 text-slate-900">
-                  <div className="text-4xl">📦</div>
-                  <div className="font-black font-mono text-lg tracking-wider">OPEN PACK</div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <div className="space-y-3 z-10 text-slate-900">
+                  <div className="text-5xl animate-pulse">📦</div>
+                  <div className="font-black font-mono text-xl tracking-wider">
+                    {isOpeningPack
+                      ? (isHypePack ? '🔥 HYPE PACK...' : 'OPENING...')
+                      : (locale === 'en' ? 'CLICK TO OPEN' : 'BẤM ĐỂ MỞ')}
+                  </div>
+                  <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
                     ONE ROSTER PER DRAW
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Pack Controls */}
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={handleOpenPack}
-                disabled={isOpeningPack || packCount >= MAX_PACKS || (currentPack !== null && pickedCardId === null)}
-                className="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-40 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition"
-              >
-                {isOpeningPack
-                  ? (locale === 'en' ? 'OPENING PACK...' : 'ĐANG MỞ GÓI...')
-                  : currentPack === null
-                  ? (locale === 'en' ? '📦 OPEN PACK 1' : '📦 MỞ GÓI 1')
-                  : (locale === 'en' ? '📦 OPEN NEXT PACK' : '📦 MỞ GÓI TIẾP')}
-              </button>
+            <p className="text-xs text-slate-400 font-mono">
+              👇 {locale === 'en' ? 'Click directly on the Pack above to open or reroll!' : 'Bấm trực tiếp vào Gói Bài ở trên để mở hoặc bốc gói mới!'}
+            </p>
 
-              {currentPack !== null && pickedCardId === null && skipsLeft > 0 && (
-                <button
-                  onClick={handleSkipPack}
-                  disabled={isOpeningPack}
-                  className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-orange-400 font-extrabold rounded-2xl text-xs whitespace-nowrap transition"
-                >
-                  🔄 {locale === 'en' ? `Reroll Pack (${skipsLeft} left)` : `Đổi Gói Bài (${skipsLeft} lượt)`}
-                </button>
-              )}
-            </div>
+            {/* Reroll Action Button */}
+            {currentPack !== null && pickedCardId === null && skipsLeft > 0 && (
+              <button
+                onClick={handleSkipPack}
+                disabled={isOpeningPack}
+                className="px-6 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-orange-400 font-extrabold rounded-2xl text-xs whitespace-nowrap transition shadow-md"
+              >
+                🔄 {locale === 'en' ? `Reroll Pack (${skipsLeft} left)` : `Đổi Gói Bài (${skipsLeft} lượt còn lại)`}
+              </button>
+            )}
           </div>
 
           {/* Cards Reveal Grid */}
@@ -791,7 +842,7 @@ export default function HoopickPage() {
             </div>
           )}
 
-          {/* LIVE DIGITAL SCOREBOARD WITH COUNTDOWN CLOCK & REALTIME TICKING */}
+          {/* HIGH-FREQUENCY LIVE DIGITAL SCOREBOARD WITH TICKING CLOCK */}
           {!isChampion && (
             <div className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
               <div className="space-y-1">
@@ -806,7 +857,7 @@ export default function HoopickPage() {
               {/* Digital LED Clock & Live Quarter Status */}
               <div className="inline-flex flex-col items-center space-y-1 bg-slate-950 border border-slate-800 px-6 py-3 rounded-2xl shadow-inner">
                 <span className="text-[10px] font-mono font-extrabold text-slate-400 uppercase tracking-widest">
-                  {isSimulatingLive ? `LIVE MATCH IN PROGRESS — ${liveQuarterLabel}` : 'LIVE GAME CLOCK'}
+                  {isSimulatingLive ? `LIVE TICKING — ${liveQuarterLabel}` : 'LIVE GAME CLOCK'}
                 </span>
                 <div
                   className="text-3xl font-mono font-black text-red-500 tracking-wider"

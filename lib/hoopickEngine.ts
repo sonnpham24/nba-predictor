@@ -25,11 +25,11 @@ export interface PlayoffPlayerStat {
   blk: number;
 }
 
-export interface QuarterScores {
-  q1: [number, number]; // [user, opp]
-  q2: [number, number];
-  q3: [number, number];
-  q4: [number, number];
+export interface TimelineFrame {
+  quarter: string;
+  clock: string;
+  myScore: number;
+  oppScore: number;
 }
 
 export interface PlayoffGameResult {
@@ -37,7 +37,7 @@ export interface PlayoffGameResult {
   myScore: number;
   oppScore: number;
   winner: 'user' | 'opp';
-  quarters: QuarterScores;
+  timeline: TimelineFrame[];
   myBoxScore: PlayoffPlayerStat[];
   oppBoxScore: PlayoffPlayerStat[];
 }
@@ -101,12 +101,6 @@ export function generatePlayoffOpponents(userConf: 'East' | 'West'): {
   };
 }
 
-/**
- * Enhanced Game Simulation with realistic risk/upset variance
- * - Small gap (0-6 OVR difference): 30-40% chance for upset (weaker team wins).
- * - Moderate gap (7-14 OVR difference): 15-25% chance for upset.
- * - Large gap (>15 OVR difference): <5% chance for upset.
- */
 export function simulateSingleGame(
   myTeam: Record<Position, HoopickPlayer | null>,
   oppTeam: HoopickTeam,
@@ -117,15 +111,12 @@ export function simulateSingleGame(
 
   const ovrDiff = myOvr - oppOvr;
 
-  // Add realistic game-to-game shooting luck variance (Gaussian-ish randomness using 3 random rolls)
-  const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 12; // -18 to +18
+  const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 12;
   const oppLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 12;
 
-  // Base score 100 + OVR advantage * factor + Luck
   let myTotalScore = Math.max(80, Math.round(100 + ovrDiff * 1.2 + myLuck));
   let oppTotalScore = Math.max(80, Math.round(100 - ovrDiff * 1.2 + oppLuck));
 
-  // No tie score in NBA Playoff games
   if (myTotalScore === oppTotalScore) {
     if (Math.random() > 0.5) myTotalScore += 3;
     else oppTotalScore += 3;
@@ -133,25 +124,44 @@ export function simulateSingleGame(
 
   const winner = myTotalScore > oppTotalScore ? 'user' : 'opp';
 
-  // Break down into 4 quarters for live digital scoreboard progression
-  const q1My = Math.round(myTotalScore * (0.22 + Math.random() * 0.05));
-  const q1Opp = Math.round(oppTotalScore * (0.22 + Math.random() * 0.05));
+  // Generate a smooth 12-frame Granular Score Timeline for high-frequency live ticking
+  const steps = 12;
+  const timeline: TimelineFrame[] = [];
 
-  const q2My = Math.round(myTotalScore * (0.24 + Math.random() * 0.05));
-  const q2Opp = Math.round(oppTotalScore * (0.24 + Math.random() * 0.05));
+  const timeLabels = [
+    { q: 'Q1', c: '09:30' },
+    { q: 'Q1', c: '04:15' },
+    { q: 'Q1', c: '00:00' },
+    { q: 'Q2', c: '08:45' },
+    { q: 'Q2', c: '03:10' },
+    { q: 'Q2', c: '00:00' },
+    { q: 'Q3', c: '07:20' },
+    { q: 'Q3', c: '02:00' },
+    { q: 'Q3', c: '00:00' },
+    { q: 'Q4', c: '04:30' },
+    { q: 'Q4', c: '01:15' },
+    { q: 'Q4', c: '00:00 (BUZZER)' },
+  ];
 
-  const q3My = Math.round(myTotalScore * (0.24 + Math.random() * 0.05));
-  const q3Opp = Math.round(oppTotalScore * (0.24 + Math.random() * 0.05));
+  for (let i = 0; i < steps; i++) {
+    const progress = (i + 1) / steps;
+    const isLast = i === steps - 1;
 
-  const q4My = myTotalScore - (q1My + q2My + q3My);
-  const q4Opp = oppTotalScore - (q1Opp + q2Opp + q3Opp);
+    // Gradual score accumulation
+    const mScore = isLast
+      ? myTotalScore
+      : Math.min(myTotalScore - 1, Math.round(myTotalScore * progress * (0.92 + Math.random() * 0.16)));
+    const oScore = isLast
+      ? oppTotalScore
+      : Math.min(oppTotalScore - 1, Math.round(oppTotalScore * progress * (0.92 + Math.random() * 0.16)));
 
-  const quarters: QuarterScores = {
-    q1: [q1My, q1Opp],
-    q2: [q1My + q2My, q1Opp + q2Opp],
-    q3: [q1My + q2My + q3My, q1Opp + q2Opp + q3Opp],
-    q4: [myTotalScore, oppTotalScore],
-  };
+    timeline.push({
+      quarter: timeLabels[i].q,
+      clock: timeLabels[i].c,
+      myScore: Math.max(0, mScore),
+      oppScore: Math.max(0, oScore),
+    });
+  }
 
   // Generate Box Scores
   const myPlayers = POSITIONS.map((pos) => {
@@ -177,7 +187,7 @@ export function simulateSingleGame(
     myScore: myTotalScore,
     oppScore: oppTotalScore,
     winner,
-    quarters,
+    timeline,
     myBoxScore,
     oppBoxScore,
   };
