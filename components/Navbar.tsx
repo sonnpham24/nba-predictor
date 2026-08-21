@@ -58,6 +58,7 @@ export default function Navbar() {
     { href: '/standings', label: t.navStandings },
     { href: '/teams', label: t.navTeams },
     { href: '/stats', label: t.navLeaderboard },
+    { href: '/hoopick', label: t.navHoopick },
   ];
 
   if (user?.isAdmin) {
@@ -239,6 +240,17 @@ export default function Navbar() {
                 }`}
               >
                 <span>{t.navLeaderboard}</span>
+              </Link>
+
+              <Link
+                href="/hoopick"
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all duration-300 flex items-center space-x-2 ${
+                  pathname === '/hoopick'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md scale-105'
+                    : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:text-amber-400'
+                }`}
+              >
+                <span>{t.navHoopick}</span>
               </Link>
 
               {user.isAdmin && (
