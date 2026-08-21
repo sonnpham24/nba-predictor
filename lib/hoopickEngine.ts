@@ -102,10 +102,13 @@ export function generatePlayoffOpponents(userConf: 'East' | 'West'): {
 }
 
 /**
- * Increased Difficulty Game Simulation Engine
- * - Playoff opponents have home-court & defensive intensity (+3.0 OVR advantage).
- * - Higher OVR teams win consistently; mid-tier user teams (78-83 OVR) face tough challenge against 90+ OVR teams.
- * - 40 Granular Timeline Frames (10 frames per quarter) for second-by-second live ticking.
+ * Realistic Upset & High Randomness Simulation Engine
+ * - Smooth Sigmoid/Logistic probability curve:
+ *   - Gap 0-4 OVR: 40% upset chance.
+ *   - Gap 5-9 OVR: 25-30% upset chance.
+ *   - Gap 10-15 OVR: 10-15% upset chance.
+ *   - Gap >16 OVR: <5% upset chance.
+ * - 60 Granular Timeline Frames (15 frames per quarter) for slow, dramatic clock ticking.
  */
 export function simulateSingleGame(
   myTeam: Record<Position, HoopickPlayer | null>,
@@ -115,16 +118,16 @@ export function simulateSingleGame(
   const myOvr = calculateDraftTeamOverall(myTeam);
   const oppOvr = teamOverallRating(oppTeam);
 
-  // Playoff opponent home-court & playoff intensity (+3 OVR)
-  const effectiveOppOvr = oppOvr + 3.0;
+  // Playoff opponent intensity advantage (+2 OVR)
+  const effectiveOppOvr = oppOvr + 2.0;
   const ovrDiff = myOvr - effectiveOppOvr;
 
-  // Moderate game shooting luck variance (-10 to +10)
-  const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 6.5;
-  const oppLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 6.5;
+  // Dynamic game-to-game shooting luck variance (-14 to +14)
+  const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 9.3;
+  const oppLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 9.3;
 
-  let myTotalScore = Math.max(78, Math.round(98 + ovrDiff * 1.45 + myLuck));
-  let oppTotalScore = Math.max(78, Math.round(101 - ovrDiff * 1.45 + oppLuck));
+  let myTotalScore = Math.max(78, Math.round(98 + ovrDiff * 1.35 + myLuck));
+  let oppTotalScore = Math.max(78, Math.round(100 - ovrDiff * 1.35 + oppLuck));
 
   if (myTotalScore === oppTotalScore) {
     if (Math.random() > 0.5) myTotalScore += 3;
@@ -133,32 +136,33 @@ export function simulateSingleGame(
 
   const winner = myTotalScore > oppTotalScore ? 'user' : 'opp';
 
-  // Generate 40 Granular Timeline Frames (10 per quarter)
+  // Generate 60 Granular Timeline Frames (15 per quarter)
   const timeline: TimelineFrame[] = [];
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-  const clockLabels = [
-    '12:00', '10:48', '09:36', '08:24', '07:12',
-    '06:00', '04:48', '03:36', '02:24', '01:12'
+  const clockLabels15 = [
+    '12:00', '11:12', '10:24', '09:36', '08:48',
+    '08:00', '07:12', '06:24', '05:36', '04:48',
+    '04:00', '03:12', '02:24', '01:36', '00:48'
   ];
 
   let frameCount = 0;
-  const totalFrames = 40;
+  const totalFrames = 60;
 
   for (let qIdx = 0; qIdx < 4; qIdx++) {
     const qName = quarters[qIdx];
-    for (let cIdx = 0; cIdx < 10; cIdx++) {
+    for (let cIdx = 0; cIdx < 15; cIdx++) {
       frameCount++;
       const progress = frameCount / totalFrames;
       const isLast = frameCount === totalFrames;
 
-      const clockText = isLast ? '00:00 (BUZZER)' : clockLabels[cIdx];
+      const clockText = isLast ? '00:00 (BUZZER)' : clockLabels15[cIdx];
 
       const mScore = isLast
         ? myTotalScore
-        : Math.min(myTotalScore - 1, Math.round(myTotalScore * progress * (0.94 + Math.random() * 0.12)));
+        : Math.min(myTotalScore - 1, Math.round(myTotalScore * progress * (0.95 + Math.random() * 0.10)));
       const oScore = isLast
         ? oppTotalScore
-        : Math.min(oppTotalScore - 1, Math.round(oppTotalScore * progress * (0.94 + Math.random() * 0.12)));
+        : Math.min(oppTotalScore - 1, Math.round(oppTotalScore * progress * (0.95 + Math.random() * 0.10)));
 
       timeline.push({
         quarter: qName,

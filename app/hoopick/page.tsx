@@ -98,11 +98,10 @@ export default function HoopickPage() {
     setGameStarted(true);
   };
 
-  // STRICT 5-PACK LIMIT & CREATIVE HYPE PACK FX (ICON / ELITE)
+  // PACK OPENING WITH CREATIVE HYPE FX (ICON WIDE SUN RAYS & ELITE STARBURST)
   const handleOpenPack = () => {
     if (!conference || isOpeningPack) return;
 
-    // Check if player hasn't drafted from existing pack yet
     if (currentPack !== null && pickedCardId === null) {
       toast.error(
         locale === 'en'
@@ -127,7 +126,8 @@ export default function HoopickPage() {
     setIsOpeningPack(true);
     setHypeTier(tier);
 
-    const delay = hasIcon ? 1400 : hasElite ? 900 : 500;
+    // Build up excitement: Icon = 1800ms, Elite = 1000ms, Normal = 500ms
+    const delay = hasIcon ? 1800 : hasElite ? 1000 : 500;
 
     setTimeout(() => {
       setIsShakingPack(false);
@@ -156,7 +156,7 @@ export default function HoopickPage() {
     setIsOpeningPack(true);
     setHypeTier(tier);
 
-    const delay = hasIcon ? 1400 : hasElite ? 900 : 500;
+    const delay = hasIcon ? 1800 : hasElite ? 1000 : 500;
 
     setTimeout(() => {
       setIsShakingPack(false);
@@ -237,7 +237,7 @@ export default function HoopickPage() {
     setLiveQuarterLabel('Q1');
   };
 
-  // 40 GRANULAR TIMELINE TICKING ANIMATION FOR A SINGLE GAME
+  // 60 GRANULAR TIMELINE TICKING ANIMATION FOR A SINGLE GAME (SLOWER & DRAMATIC)
   const animateGameSingle = (
     gameRes: PlayoffGameResult,
     onComplete: (res: PlayoffGameResult) => void
@@ -259,7 +259,7 @@ export default function HoopickPage() {
         setIsSimulatingLive(false);
         onComplete(gameRes);
       }
-    }, 45); // ~45ms per frame * 40 frames = ~1.8s duration
+    }, 70); // 70ms * 60 frames = 4.2 seconds dramatic game simulation
   };
 
   const handleSimulateNextGame = () => {
@@ -293,7 +293,7 @@ export default function HoopickPage() {
     });
   };
 
-  // RESUME SIMULATE ENTIRE SERIES FROM CURRENT GAME STATE WITH PAUSE
+  // RESUME SIMULATE ENTIRE SERIES WITH 60 TIMELINE FRAMES & 1.2S PAUSE PER GAME
   const handleSimulateFullSeries = async () => {
     if (!currentSeries || currentSeries.isOver || isSimulatingLive) return;
 
@@ -308,7 +308,7 @@ export default function HoopickPage() {
     while (myWinsAcc < 4 && oppWinsAcc < 4) {
       const gameRes = simulateSingleGame(myTeam, currentSeries.oppTeam, gameNum);
 
-      // Run 40-frame timeline ticking
+      // Run 60-frame timeline ticking at 40ms per frame = 2.4s per game
       await new Promise<void>((resolve) => {
         let step = 0;
         const interval = setInterval(() => {
@@ -323,7 +323,7 @@ export default function HoopickPage() {
             clearInterval(interval);
             resolve();
           }
-        }, 35);
+        }, 40);
       });
 
       if (gameRes.winner === 'user') myWinsAcc++;
@@ -345,9 +345,9 @@ export default function HoopickPage() {
       );
       setSelectedGameForBoxScore(gameRes);
 
-      // Pause 1 second at the end of each game before simulating the next
+      // Pause 1.2 seconds at the end of each game to appreciate final score & series standings
       if (!isSeriesComplete) {
-        await new Promise((resolve) => setTimeout(resolve, 950));
+        await new Promise((resolve) => setTimeout(resolve, 1200));
       }
 
       gameNum++;
@@ -437,36 +437,46 @@ export default function HoopickPage() {
   };
 
   const roundNames = ['First Round', 'Conference Semis', 'Conference Finals', 'NBA Finals'];
+  const startingFivePositions: Position[] = ['PG', 'SG', 'SF', 'PF', 'C'];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
-      {/* Keyframe animations for Sun Rays, Thunderbolt & Hype FX */}
+      {/* WIDE SUN RAYS & STARBURST KEYFRAME ANIMATIONS */}
       <style jsx global>{`
         @keyframes sunRaysRotate {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        @keyframes starburstRotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(-360deg); }
+        }
         @keyframes packShine {
           0% { background-position: 0% 0%; }
           100% { background-position: 130% 130%; }
         }
-        @keyframes packShake {
-          0%, 100% { transform: translateX(0) rotate(0deg); }
-          20% { transform: translateX(-9px) rotate(-3.5deg); }
-          40% { transform: translateX(9px) rotate(3.5deg); }
-          60% { transform: translateX(-6px) rotate(-2deg); }
-          80% { transform: translateX(6px) rotate(2deg); }
+        @keyframes packShakeIntense {
+          0%, 100% { transform: translateX(0) rotate(0deg) scale(1); }
+          15% { transform: translateX(-12px) rotate(-5deg) scale(1.05); }
+          30% { transform: translateX(12px) rotate(5deg) scale(1.08); }
+          45% { transform: translateX(-9px) rotate(-3.5deg) scale(1.05); }
+          60% { transform: translateX(9px) rotate(3.5deg) scale(1.08); }
+          75% { transform: translateX(-5px) rotate(-2deg) scale(1.03); }
+          90% { transform: translateX(5px) rotate(2deg) scale(1.05); }
         }
         @keyframes cardPopIn {
           0% { transform: scale(0.65) translateY(24px); opacity: 0; }
           100% { transform: scale(1) translateY(0); opacity: 1; }
         }
         @keyframes iconThunderGlow {
-          0%, 100% { box-shadow: 0 0 40px rgba(251, 191, 36, 0.9), 0 0 80px rgba(225, 29, 72, 0.7); }
-          50% { box-shadow: 0 0 65px rgba(251, 191, 36, 1), 0 0 110px rgba(168, 85, 247, 0.9); }
+          0%, 100% { box-shadow: 0 0 50px rgba(251, 191, 36, 1), 0 0 100px rgba(225, 29, 72, 0.8); }
+          50% { box-shadow: 0 0 85px rgba(251, 191, 36, 1), 0 0 140px rgba(168, 85, 247, 1); }
         }
         .animate-sun-rays {
-          animation: sunRaysRotate 12s linear infinite;
+          animation: sunRaysRotate 10s linear infinite;
+        }
+        .animate-starburst-slow {
+          animation: starburstRotate 14s linear infinite;
         }
         .animate-pack-shine::before {
           content: '';
@@ -476,11 +486,11 @@ export default function HoopickPage() {
           background-size: 260% 260%;
           animation: packShine 3.2s linear infinite;
         }
-        .animate-pack-shake {
-          animation: packShake 0.5s ease infinite;
+        .animate-pack-shake-intense {
+          animation: packShakeIntense 0.45s ease infinite;
         }
         .animate-icon-thunder {
-          animation: iconThunderGlow 0.9s infinite alternate;
+          animation: iconThunderGlow 0.8s infinite alternate;
         }
         .animate-card-pop {
           animation: cardPopIn 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
@@ -610,18 +620,41 @@ export default function HoopickPage() {
       {/* STEP 2: PACK OPENING & SELECTION ZONE */}
       {gameStarted && !playoffMode && (
         <div className="space-y-8">
-          {/* REALISTIC 3D PACK CONTAINER WITH CREATIVE SUN RAYS & THUNDERBOLT HYPE FX */}
+          {/* REALISTIC 3D PACK CONTAINER WITH WIDE SUN RAYS & STARBURST HYPE FX */}
           <div className="flex flex-col items-center justify-center space-y-6 glass-card p-8 rounded-3xl border border-slate-800 text-center relative overflow-hidden">
-            {/* Background Sun Rays Light Beams for Icon Pack */}
+            {/* Background Wide Sun Rays Light Beams for Icon Pack */}
             {hypeTier === 'icon' && isOpeningPack && (
-              <div className="absolute -inset-20 opacity-40 pointer-events-none flex items-center justify-center">
-                <svg className="w-[500px] h-[500px] animate-sun-rays" viewBox="0 0 200 200">
-                  <path d="M100 0 L110 90 L200 100 L110 110 L100 200 L90 110 L0 100 L90 90 Z" fill="url(#sunRayGrad)" />
+              <div className="absolute -inset-44 opacity-50 pointer-events-none flex items-center justify-center overflow-hidden">
+                <svg className="w-[900px] h-[900px] animate-sun-rays" viewBox="0 0 200 200">
+                  <g fill="url(#wideSunRayGrad)">
+                    <path d="M100 0 L108 92 L200 100 L108 108 L100 200 L92 108 L0 100 L92 92 Z" />
+                    <path d="M100 0 L108 92 L200 100 L108 108 L100 200 L92 108 L0 100 L92 92 Z" transform="rotate(22.5 100 100)" />
+                    <path d="M100 0 L108 92 L200 100 L108 108 L100 200 L92 108 L0 100 L92 92 Z" transform="rotate(45 100 100)" />
+                    <path d="M100 0 L108 92 L200 100 L108 108 L100 200 L92 108 L0 100 L92 92 Z" transform="rotate(67.5 100 100)" />
+                  </g>
                   <defs>
-                    <linearGradient id="sunRayGrad" x1="0" y1="0" x2="1" y2="1">
+                    <linearGradient id="wideSunRayGrad" x1="0" y1="0" x2="1" y2="1">
                       <stop offset="0%" stopColor="#fbbf24" />
                       <stop offset="50%" stopColor="#f43f5e" />
                       <stop offset="100%" stopColor="#a855f7" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            )}
+
+            {/* Background Starburst Rays for Elite Pack */}
+            {hypeTier === 'elite' && isOpeningPack && (
+              <div className="absolute -inset-24 opacity-40 pointer-events-none flex items-center justify-center overflow-hidden">
+                <svg className="w-[600px] h-[600px] animate-starburst-slow" viewBox="0 0 200 200">
+                  <g fill="url(#purpleStarburstGrad)">
+                    <path d="M100 10 L105 95 L190 100 L105 105 L100 190 L95 105 L10 100 L95 95 Z" />
+                    <path d="M100 10 L105 95 L190 100 L105 105 L100 190 L95 105 L10 100 L95 95 Z" transform="rotate(45 100 100)" />
+                  </g>
+                  <defs>
+                    <linearGradient id="purpleStarburstGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#a855f7" />
+                      <stop offset="100%" stopColor="#3b82f6" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -645,7 +678,7 @@ export default function HoopickPage() {
             <div
               onClick={handleOpenPack}
               className={`w-48 h-64 rounded-3xl cursor-pointer bg-gradient-to-b from-white via-slate-100 to-slate-200 border-4 border-slate-300 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition duration-300 hover:scale-105 active:scale-95 animate-pack-shine z-10 ${
-                isShakingPack ? 'animate-pack-shake' : ''
+                isShakingPack ? 'animate-pack-shake-intense' : ''
               } ${
                 isOpeningPack && hypeTier === 'icon'
                   ? 'animate-icon-thunder ring-4 ring-amber-400'
@@ -878,28 +911,63 @@ export default function HoopickPage() {
             </div>
           </div>
 
-          {/* Championship Trophy Banner */}
+          {/* Championship Trophy Banner & USER STARTING FIVE SHOWCASE */}
           {isChampion && (
-            <div className="glass-card p-8 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-amber-950/60 via-slate-950 to-slate-950 text-center space-y-4 shadow-2xl animate-scale-in">
-              <div className="text-6xl animate-bounce">🏆</div>
-              <h2 className="text-3xl sm:text-4xl font-black text-amber-300 uppercase tracking-wider">
-                NBA FINALS CHAMPIONS!
-              </h2>
-              <p className="text-sm text-slate-300 max-w-md mx-auto leading-normal">
-                {locale === 'en'
-                  ? `Congratulations! ${teamName} (${teamOvr} OVR) won the NBA Championship Trophy!`
-                  : `Chúc mừng! ${teamName} (${teamOvr} OVR) đã xuất sắc giành Cúp Vô Địch NBA Finals!`}
-              </p>
-              <button
-                onClick={handleResetGame}
-                className="px-8 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-xl hover:scale-105 transition duration-300"
-              >
-                🔄 {locale === 'en' ? 'PLAY AGAIN / DRAFT NEW TEAM' : 'CHƠI LẠI / BỐC ĐỘI HÌNH MỚI'}
-              </button>
+            <div className="glass-card p-8 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-amber-950/70 via-slate-950 to-slate-950 text-center space-y-8 shadow-2xl animate-scale-in">
+              <div className="space-y-2">
+                <div className="text-6xl animate-bounce">🏆</div>
+                <h2 className="text-3xl sm:text-4xl font-black text-amber-300 uppercase tracking-wider gradient-text-gold">
+                  NBA FINALS CHAMPIONS!
+                </h2>
+                <p className="text-sm text-slate-300 max-w-md mx-auto leading-normal">
+                  {locale === 'en'
+                    ? `Congratulations! ${teamName} (${teamOvr} OVR) won the NBA Championship Trophy!`
+                    : `Chúc mừng! ${teamName} (${teamOvr} OVR) đã xuất sắc giành Cúp Vô Địch NBA Finals!`}
+                </p>
+              </div>
+
+              {/* USER STARTING FIVE ROSTER SHOWCASE GRID */}
+              <div className="space-y-3 pt-4 border-t border-amber-500/30">
+                <h3 className="text-xs font-black font-mono text-amber-400 uppercase tracking-widest">
+                  ⭐ CHAMPIONSHIP STARTING FIVE ROSTER ⭐
+                </h3>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {startingFivePositions.map((pos) => {
+                    const player = myTeam[pos];
+                    if (!player) return null;
+                    const rarity = rarityFromOvr(player.o);
+
+                    return (
+                      <div
+                        key={pos}
+                        className={`p-3.5 rounded-2xl text-center space-y-2 border ${getCardBorderStyle(rarity)}`}
+                      >
+                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full inline-block ${getRarityBadgeStyle(rarity)}`}>
+                          {RARITY_LABELS[rarity]}
+                        </span>
+                        <div className="text-2xl font-black font-mono text-white leading-none">{player.o}</div>
+                        <div className="text-[10px] font-bold text-amber-400 font-mono uppercase">{pos}</div>
+                        <div className="text-xs font-black text-white truncate">{player.n}</div>
+                        <div className="text-[9px] text-slate-400 font-mono">{player.t} '{player.e.slice(2)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  onClick={handleResetGame}
+                  className="px-8 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-xl hover:scale-105 transition duration-300"
+                >
+                  🔄 {locale === 'en' ? 'PLAY AGAIN / DRAFT NEW TEAM' : 'CHƠI LẠI / BỐC ĐỘI HÌNH MỚI'}
+                </button>
+              </div>
             </div>
           )}
 
-          {/* 40 GRANULAR TIMELINE REAL-TIME DIGITAL SCOREBOARD */}
+          {/* 60 GRANULAR TIMELINE REAL-TIME DIGITAL SCOREBOARD */}
           {!isChampion && (
             <div className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
               <div className="space-y-1">
@@ -979,7 +1047,6 @@ export default function HoopickPage() {
                   </>
                 ) : currentSeries.myWins === 4 ? (
                   currentRoundIndex === 3 ? (
-                    /* SPECIAL CHAMPION TROPHY CELEBRATION BUTTON FOR NBA FINALS WINNER */
                     <button
                       onClick={handleAdvancePlayoffRound}
                       className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600 hover:brightness-110 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-2xl shadow-amber-500/40 border-2 border-amber-300 hover:scale-105 transition duration-300 animate-pulse"
