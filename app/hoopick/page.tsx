@@ -950,7 +950,7 @@ export default function HoopickPage() {
                         <div className="text-2xl font-black font-mono text-white leading-none">{player.o}</div>
                         <div className="text-[10px] font-bold text-amber-400 font-mono uppercase">{pos}</div>
                         <div className="text-xs font-black text-white truncate">{player.n}</div>
-                        <div className="text-[9px] text-slate-400 font-mono">{player.t} '{player.e.slice(2)}</div>
+                        <div className="text-[9px] text-slate-400 font-mono">{player.t} '{player.e ? player.e.slice(2) : ''}</div>
                       </div>
                     );
                   })}
