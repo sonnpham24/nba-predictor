@@ -98,7 +98,7 @@ export default function HoopickPage() {
     setGameStarted(true);
   };
 
-  // PACK OPENING WITH CREATIVE HYPE FX (ICON WIDE SUN RAYS & ELITE STARBURST)
+  // PACK OPENING WITH INTENSE SHAKE & HYPE FX
   const handleOpenPack = () => {
     if (!conference || isOpeningPack) return;
 
@@ -126,7 +126,7 @@ export default function HoopickPage() {
     setIsOpeningPack(true);
     setHypeTier(tier);
 
-    // Build up excitement: Icon = 1800ms, Elite = 1000ms, Normal = 500ms
+    // Buildup delay: Icon = 1800ms, Elite = 1000ms, Normal = 500ms
     const delay = hasIcon ? 1800 : hasElite ? 1000 : 500;
 
     setTimeout(() => {
@@ -237,7 +237,7 @@ export default function HoopickPage() {
     setLiveQuarterLabel('Q1');
   };
 
-  // 60 GRANULAR TIMELINE TICKING ANIMATION FOR A SINGLE GAME (SLOWER & DRAMATIC)
+  // 80 GRANULAR TIMELINE TICKING ANIMATION FOR A SINGLE GAME (CONSTANT PACE)
   const animateGameSingle = (
     gameRes: PlayoffGameResult,
     onComplete: (res: PlayoffGameResult) => void
@@ -259,7 +259,7 @@ export default function HoopickPage() {
         setIsSimulatingLive(false);
         onComplete(gameRes);
       }
-    }, 70); // 70ms * 60 frames = 4.2 seconds dramatic game simulation
+    }, 50); // 50ms * 80 frames = 4.0s smooth game ticking
   };
 
   const handleSimulateNextGame = () => {
@@ -293,7 +293,7 @@ export default function HoopickPage() {
     });
   };
 
-  // RESUME SIMULATE ENTIRE SERIES WITH 60 TIMELINE FRAMES & 1.2S PAUSE PER GAME
+  // RESUME SIMULATE ENTIRE SERIES WITH 80 TIMELINE FRAMES & 1.2S PAUSE PER GAME
   const handleSimulateFullSeries = async () => {
     if (!currentSeries || currentSeries.isOver || isSimulatingLive) return;
 
@@ -308,7 +308,7 @@ export default function HoopickPage() {
     while (myWinsAcc < 4 && oppWinsAcc < 4) {
       const gameRes = simulateSingleGame(myTeam, currentSeries.oppTeam, gameNum);
 
-      // Run 60-frame timeline ticking at 40ms per frame = 2.4s per game
+      // Run 80-frame timeline ticking at 30ms per frame = 2.4s per game
       await new Promise<void>((resolve) => {
         let step = 0;
         const interval = setInterval(() => {
@@ -323,7 +323,7 @@ export default function HoopickPage() {
             clearInterval(interval);
             resolve();
           }
-        }, 40);
+        }, 30);
       });
 
       if (gameRes.winner === 'user') myWinsAcc++;
@@ -441,7 +441,7 @@ export default function HoopickPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
-      {/* WIDE SUN RAYS & STARBURST KEYFRAME ANIMATIONS */}
+      {/* KEYFRAME ANIMATIONS FOR INTENSE PACK SHAKE, SUN RAYS & STARBURST */}
       <style jsx global>{`
         @keyframes sunRaysRotate {
           0% { transform: rotate(0deg); }
@@ -456,13 +456,16 @@ export default function HoopickPage() {
           100% { background-position: 130% 130%; }
         }
         @keyframes packShakeIntense {
-          0%, 100% { transform: translateX(0) rotate(0deg) scale(1); }
-          15% { transform: translateX(-12px) rotate(-5deg) scale(1.05); }
-          30% { transform: translateX(12px) rotate(5deg) scale(1.08); }
-          45% { transform: translateX(-9px) rotate(-3.5deg) scale(1.05); }
-          60% { transform: translateX(9px) rotate(3.5deg) scale(1.08); }
-          75% { transform: translateX(-5px) rotate(-2deg) scale(1.03); }
-          90% { transform: translateX(5px) rotate(2deg) scale(1.05); }
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1.04); }
+          10% { transform: translate(-14px, -3px) rotate(-6deg) scale(1.08); }
+          20% { transform: translate(14px, 3px) rotate(6deg) scale(1.1); }
+          30% { transform: translate(-12px, 3px) rotate(-5deg) scale(1.08); }
+          40% { transform: translate(12px, -3px) rotate(5deg) scale(1.1); }
+          50% { transform: translate(-10px, -2px) rotate(-4deg) scale(1.06); }
+          60% { transform: translate(10px, 2px) rotate(4deg) scale(1.08); }
+          70% { transform: translate(-8px, 2px) rotate(-3deg) scale(1.05); }
+          80% { transform: translate(8px, -2px) rotate(3deg) scale(1.06); }
+          90% { transform: translate(-4px, 1px) rotate(-1.5deg) scale(1.03); }
         }
         @keyframes cardPopIn {
           0% { transform: scale(0.65) translateY(24px); opacity: 0; }
@@ -487,7 +490,7 @@ export default function HoopickPage() {
           animation: packShine 3.2s linear infinite;
         }
         .animate-pack-shake-intense {
-          animation: packShakeIntense 0.45s ease infinite;
+          animation: packShakeIntense 0.35s ease infinite !important;
         }
         .animate-icon-thunder {
           animation: iconThunderGlow 0.8s infinite alternate;
@@ -624,7 +627,7 @@ export default function HoopickPage() {
           <div className="flex flex-col items-center justify-center space-y-6 glass-card p-8 rounded-3xl border border-slate-800 text-center relative overflow-hidden">
             {/* Background Wide Sun Rays Light Beams for Icon Pack */}
             {hypeTier === 'icon' && isOpeningPack && (
-              <div className="absolute -inset-44 opacity-50 pointer-events-none flex items-center justify-center overflow-hidden">
+              <div className="absolute -inset-44 opacity-60 pointer-events-none flex items-center justify-center overflow-hidden">
                 <svg className="w-[900px] h-[900px] animate-sun-rays" viewBox="0 0 200 200">
                   <g fill="url(#wideSunRayGrad)">
                     <path d="M100 0 L108 92 L200 100 L108 108 L100 200 L92 108 L0 100 L92 92 Z" />
@@ -674,10 +677,10 @@ export default function HoopickPage() {
               </div>
             )}
 
-            {/* Clickable Physical Pack Card */}
+            {/* Clickable Physical Pack Card with Intense Shake Animation */}
             <div
               onClick={handleOpenPack}
-              className={`w-48 h-64 rounded-3xl cursor-pointer bg-gradient-to-b from-white via-slate-100 to-slate-200 border-4 border-slate-300 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition duration-300 hover:scale-105 active:scale-95 animate-pack-shine z-10 ${
+              className={`w-48 h-64 rounded-3xl cursor-pointer bg-gradient-to-b from-white via-slate-100 to-slate-200 border-4 border-slate-300 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition-transform hover:scale-105 active:scale-95 animate-pack-shine z-10 ${
                 isShakingPack ? 'animate-pack-shake-intense' : ''
               } ${
                 isOpeningPack && hypeTier === 'icon'
@@ -967,7 +970,7 @@ export default function HoopickPage() {
             </div>
           )}
 
-          {/* 60 GRANULAR TIMELINE REAL-TIME DIGITAL SCOREBOARD */}
+          {/* 80 GRANULAR TIMELINE REAL-TIME DIGITAL SCOREBOARD */}
           {!isChampion && (
             <div className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
               <div className="space-y-1">
