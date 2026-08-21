@@ -25,11 +25,19 @@ export interface PlayoffPlayerStat {
   blk: number;
 }
 
+export interface QuarterScores {
+  q1: [number, number]; // [user, opp]
+  q2: [number, number];
+  q3: [number, number];
+  q4: [number, number];
+}
+
 export interface PlayoffGameResult {
   gameNumber: number;
   myScore: number;
   oppScore: number;
   winner: 'user' | 'opp';
+  quarters: QuarterScores;
   myBoxScore: PlayoffPlayerStat[];
   oppBoxScore: PlayoffPlayerStat[];
 }
@@ -78,7 +86,6 @@ export function generatePlayoffOpponents(userConf: 'East' | 'West'): {
   const sameConfPool = HOOPICK_TEAMS.filter((t) => t.conference === userConf);
   const oppConfPool = HOOPICK_TEAMS.filter((t) => t.conference !== userConf);
 
-  // Pick diverse tiers for playoff rounds (Round 1 Playoff tier -> Round 2 Contender -> Conf Finals Legendary -> NBA Finals Legendary)
   const round1Pool = sameConfPool.filter((t) => t.tier === 'Playoff') || sameConfPool;
   const round2Pool = sameConfPool.filter((t) => t.tier === 'Contender') || sameConfPool;
   const confFinalsPool = sameConfPool.filter((t) => t.tier === 'Legendary') || sameConfPool;
@@ -94,6 +101,12 @@ export function generatePlayoffOpponents(userConf: 'East' | 'West'): {
   };
 }
 
+/**
+ * Enhanced Game Simulation with realistic risk/upset variance
+ * - Small gap (0-6 OVR difference): 30-40% chance for upset (weaker team wins).
+ * - Moderate gap (7-14 OVR difference): 15-25% chance for upset.
+ * - Large gap (>15 OVR difference): <5% chance for upset.
+ */
 export function simulateSingleGame(
   myTeam: Record<Position, HoopickPlayer | null>,
   oppTeam: HoopickTeam,
@@ -102,21 +115,43 @@ export function simulateSingleGame(
   const myOvr = calculateDraftTeamOverall(myTeam);
   const oppOvr = teamOverallRating(oppTeam);
 
-  // Base score around 102
   const ovrDiff = myOvr - oppOvr;
-  const myVariance = Math.floor(Math.random() * 19) - 9; // -9 to +9
-  const oppVariance = Math.floor(Math.random() * 19) - 9;
 
-  let myScore = Math.max(82, Math.round(102 + ovrDiff * 1.4 + myVariance));
-  let oppScore = Math.max(82, Math.round(102 - ovrDiff * 1.4 + oppVariance));
+  // Add realistic game-to-game shooting luck variance (Gaussian-ish randomness using 3 random rolls)
+  const myLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 12; // -18 to +18
+  const oppLuck = (Math.random() + Math.random() + Math.random() - 1.5) * 12;
 
-  // Ensure no ties in basketball
-  if (myScore === oppScore) {
-    if (Math.random() > 0.5) myScore += 3;
-    else oppScore += 3;
+  // Base score 100 + OVR advantage * factor + Luck
+  let myTotalScore = Math.max(80, Math.round(100 + ovrDiff * 1.2 + myLuck));
+  let oppTotalScore = Math.max(80, Math.round(100 - ovrDiff * 1.2 + oppLuck));
+
+  // No tie score in NBA Playoff games
+  if (myTotalScore === oppTotalScore) {
+    if (Math.random() > 0.5) myTotalScore += 3;
+    else oppTotalScore += 3;
   }
 
-  const winner = myScore > oppScore ? 'user' : 'opp';
+  const winner = myTotalScore > oppTotalScore ? 'user' : 'opp';
+
+  // Break down into 4 quarters for live digital scoreboard progression
+  const q1My = Math.round(myTotalScore * (0.22 + Math.random() * 0.05));
+  const q1Opp = Math.round(oppTotalScore * (0.22 + Math.random() * 0.05));
+
+  const q2My = Math.round(myTotalScore * (0.24 + Math.random() * 0.05));
+  const q2Opp = Math.round(oppTotalScore * (0.24 + Math.random() * 0.05));
+
+  const q3My = Math.round(myTotalScore * (0.24 + Math.random() * 0.05));
+  const q3Opp = Math.round(oppTotalScore * (0.24 + Math.random() * 0.05));
+
+  const q4My = myTotalScore - (q1My + q2My + q3My);
+  const q4Opp = oppTotalScore - (q1Opp + q2Opp + q3Opp);
+
+  const quarters: QuarterScores = {
+    q1: [q1My, q1Opp],
+    q2: [q1My + q2My, q1Opp + q2Opp],
+    q3: [q1My + q2My + q3My, q1Opp + q2Opp + q3Opp],
+    q4: [myTotalScore, oppTotalScore],
+  };
 
   // Generate Box Scores
   const myPlayers = POSITIONS.map((pos) => {
@@ -134,14 +169,15 @@ export function simulateSingleGame(
     p: pos,
   }));
 
-  const myBoxScore = generateTeamBoxScore(myPlayers, myScore);
-  const oppBoxScore = generateTeamBoxScore(oppPlayers, oppScore);
+  const myBoxScore = generateTeamBoxScore(myPlayers, myTotalScore);
+  const oppBoxScore = generateTeamBoxScore(oppPlayers, oppTotalScore);
 
   return {
     gameNumber,
-    myScore,
-    oppScore,
+    myScore: myTotalScore,
+    oppScore: oppTotalScore,
     winner,
+    quarters,
     myBoxScore,
     oppBoxScore,
   };
@@ -153,7 +189,6 @@ function generateTeamBoxScore(
 ): PlayoffPlayerStat[] {
   const totalOvr = players.reduce((sum, p) => sum + p.o, 0);
 
-  // Distribute points proportional to player OVR with slight randomness
   let allocatedPoints = 0;
   const rawStats = players.map((p) => {
     const weight = p.o / totalOvr;
@@ -162,7 +197,6 @@ function generateTeamBoxScore(
     return { player: p, pts: basePts };
   });
 
-  // Adjust point total exact match
   const diff = totalPoints - allocatedPoints;
   if (rawStats.length > 0) {
     rawStats[0].pts += diff;

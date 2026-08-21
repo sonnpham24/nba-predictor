@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   HoopickPlayer,
@@ -14,7 +14,6 @@ import {
 import {
   DrawnPlayerCard,
   PlayoffGameResult,
-  PlayoffSeriesResult,
   calculateDraftTeamOverall,
   drawPackFromConference,
   generatePlayoffOpponents,
@@ -23,7 +22,6 @@ import {
 } from '@/lib/hoopickEngine';
 import toast from 'react-hot-toast';
 
-const POSITIONS: Position[] = ['PG', 'SG', 'SF', 'PF', 'C'];
 const MAX_PACKS = 5;
 const MAX_SKIPS = 2;
 
@@ -47,6 +45,7 @@ export default function HoopickPage() {
   const [skipsLeft, setSkipsLeft] = useState<number>(MAX_SKIPS);
   const [currentPack, setCurrentPack] = useState<DrawnPlayerCard[] | null>(null);
   const [isOpeningPack, setIsOpeningPack] = useState<boolean>(false);
+  const [isShakingPack, setIsShakingPack] = useState<boolean>(false);
   const [pickedCardId, setPickedCardId] = useState<string | null>(null);
   const [pickedPlayerNames, setPickedPlayerNames] = useState<Set<string>>(new Set());
 
@@ -59,7 +58,7 @@ export default function HoopickPage() {
     nbaFinals: HoopickTeam;
   } | null>(null);
 
-  const [currentRoundIndex, setCurrentRoundIndex] = useState<number>(0); // 0: Round 1, 1: Round 2, 2: Conf Finals, 3: NBA Finals
+  const [currentRoundIndex, setCurrentRoundIndex] = useState<number>(0);
   const [currentSeries, setCurrentSeries] = useState<{
     roundName: string;
     oppTeam: HoopickTeam;
@@ -71,6 +70,13 @@ export default function HoopickPage() {
 
   const [isChampion, setIsChampion] = useState<boolean>(false);
   const [selectedGameForBoxScore, setSelectedGameForBoxScore] = useState<PlayoffGameResult | null>(null);
+
+  // Live Scoreboard Animation States
+  const [isSimulatingLive, setIsSimulatingLive] = useState<boolean>(false);
+  const [liveClock, setLiveClock] = useState<string>('02:00');
+  const [liveMyScore, setLiveMyScore] = useState<number>(0);
+  const [liveOppScore, setLiveOppScore] = useState<number>(0);
+  const [liveQuarterLabel, setLiveQuarterLabel] = useState<string>('Q4');
 
   // Computed values
   const filledCount = Object.values(myTeam).filter((p) => p !== null).length;
@@ -89,9 +95,9 @@ export default function HoopickPage() {
     const finalName = teamName.trim() || (locale === 'en' ? 'Your Five' : 'Đội Hình 5 Người');
     setTeamName(finalName);
     setGameStarted(true);
-    toast.success(locale === 'en' ? `Welcome! Open your 1st pack for ${finalName}` : `Chào mừng! Mở gói bài đầu tiên cho ${finalName}`);
   };
 
+  // Realistic Pack Opening with Shake & Reveal
   const handleOpenPack = () => {
     if (!conference) return;
     if (packCount >= MAX_PACKS) {
@@ -99,14 +105,17 @@ export default function HoopickPage() {
       return;
     }
 
+    setIsShakingPack(true);
     setIsOpeningPack(true);
+
     setTimeout(() => {
+      setIsShakingPack(false);
       const cards = drawPackFromConference(conference);
       setCurrentPack(cards);
       setPickedCardId(null);
       setPackCount((prev) => prev + 1);
       setIsOpeningPack(false);
-    }, 400);
+    }, 600);
   };
 
   const handleSkipPack = () => {
@@ -117,14 +126,16 @@ export default function HoopickPage() {
     if (!conference) return;
 
     setSkipsLeft((prev) => prev - 1);
+    setIsShakingPack(true);
     setIsOpeningPack(true);
+
     setTimeout(() => {
+      setIsShakingPack(false);
       const cards = drawPackFromConference(conference);
       setCurrentPack(cards);
       setPickedCardId(null);
       setIsOpeningPack(false);
-      toast.success(locale === 'en' ? 'Pack rerolled!' : 'Đã đổi gói bài mới!');
-    }, 400);
+    }, 600);
   };
 
   const handlePickPlayer = (card: DrawnPlayerCard, targetPos: Position) => {
@@ -134,11 +145,10 @@ export default function HoopickPage() {
     }
 
     if (pickedPlayerNames.has(card.n)) {
-      toast.error(locale === 'en' ? `${card.n} is already drafted in your team!` : `${card.n} đã có trong đội hình của bạn!`);
+      toast.error(locale === 'en' ? `${card.n} is already drafted!` : `${card.n} đã có trong đội hình của bạn!`);
       return;
     }
 
-    // Add player to team
     const newPlayer: HoopickPlayer = {
       n: card.n,
       o: card.o,
@@ -156,9 +166,7 @@ export default function HoopickPage() {
 
     setPickedCardId(card.cardId);
 
-    toast.success(locale === 'en' ? `Drafted ${card.n} (${card.o} OVR) to ${targetPos}!` : `Đã chọn ${card.n} (${card.o} OVR) vào vị trí ${targetPos}!`);
-
-    // Check if team is complete (5 positions filled)
+    // Only notify when 5 positions complete
     const newFilledCount = Object.values(newTeam).filter((p) => p !== null).length;
     if (newFilledCount === 5) {
       toast.success(locale === 'en' ? '🎉 Your Starting Five is complete! Ready for Playoffs!' : '🎉 Đội hình 5 người đã hoàn tất! Sẵn sàng đấu Playoff!');
@@ -178,7 +186,6 @@ export default function HoopickPage() {
     setPlayoffMode(true);
     setCurrentRoundIndex(0);
 
-    // Initialize 1st Round Series
     startSeries(opps.round1, 'First Round');
   };
 
@@ -192,45 +199,79 @@ export default function HoopickPage() {
       isOver: false,
     });
     setSelectedGameForBoxScore(null);
+    setLiveMyScore(0);
+    setLiveOppScore(0);
+    setLiveClock('02:00');
   };
 
+  // REAL-TIME DIGITAL CLOCK & SCORE TICKING ANIMATION
   const handleSimulateNextGame = () => {
-    if (!currentSeries || currentSeries.isOver) return;
+    if (!currentSeries || currentSeries.isOver || isSimulatingLive) return;
 
     const gameNum = currentSeries.games.length + 1;
     const gameRes = simulateSingleGame(myTeam, currentSeries.oppTeam, gameNum);
 
-    const newMyWins = currentSeries.myWins + (gameRes.winner === 'user' ? 1 : 0);
-    const newOppWins = currentSeries.oppWins + (gameRes.winner === 'opp' ? 1 : 0);
-    const isOver = newMyWins === 4 || newOppWins === 4;
+    setIsSimulatingLive(true);
+    setLiveQuarterLabel('Q1');
+    setLiveClock('12:00');
+    setLiveMyScore(gameRes.quarters.q1[0]);
+    setLiveOppScore(gameRes.quarters.q1[1]);
 
-    const updatedGames = [...currentSeries.games, gameRes];
-    setCurrentSeries({
-      ...currentSeries,
-      myWins: newMyWins,
-      oppWins: newOppWins,
-      games: updatedGames,
-      isOver,
-    });
-    setSelectedGameForBoxScore(gameRes);
+    // Animate quarters progression Q1 -> Q2 -> Q3 -> Q4 Countdown
+    setTimeout(() => {
+      setLiveQuarterLabel('Q2');
+      setLiveClock('06:00');
+      setLiveMyScore(gameRes.quarters.q2[0]);
+      setLiveOppScore(gameRes.quarters.q2[1]);
+    }, 700);
 
-    if (gameRes.winner === 'user') {
-      toast.success(`Game ${gameNum}: WIN! (${gameRes.myScore} - ${gameRes.oppScore})`);
-    } else {
-      toast.error(`Game ${gameNum}: LOSS! (${gameRes.myScore} - ${gameRes.oppScore})`);
-    }
+    setTimeout(() => {
+      setLiveQuarterLabel('Q3');
+      setLiveClock('03:00');
+      setLiveMyScore(gameRes.quarters.q3[0]);
+      setLiveOppScore(gameRes.quarters.q3[1]);
+    }, 1400);
 
-    if (isOver) {
-      if (newMyWins === 4) {
-        toast.success(`🎉 Won the ${currentSeries.roundName} (4-${newOppWins})!`);
-      } else {
-        toast.error(`❌ Eliminated in ${currentSeries.roundName} (4-${newMyWins}). Better luck next time!`);
+    setTimeout(() => {
+      setLiveQuarterLabel('Q4');
+      setLiveClock('01:00');
+      setLiveMyScore(Math.round(gameRes.myScore * 0.95));
+      setLiveOppScore(Math.round(gameRes.oppScore * 0.95));
+    }, 2100);
+
+    setTimeout(() => {
+      setLiveQuarterLabel('Q4');
+      setLiveClock('00:00 (BUZZER)');
+      setLiveMyScore(gameRes.myScore);
+      setLiveOppScore(gameRes.oppScore);
+
+      const newMyWins = currentSeries.myWins + (gameRes.winner === 'user' ? 1 : 0);
+      const newOppWins = currentSeries.oppWins + (gameRes.winner === 'opp' ? 1 : 0);
+      const isOver = newMyWins === 4 || newOppWins === 4;
+
+      const updatedGames = [...currentSeries.games, gameRes];
+      setCurrentSeries({
+        ...currentSeries,
+        myWins: newMyWins,
+        oppWins: newOppWins,
+        games: updatedGames,
+        isOver,
+      });
+      setSelectedGameForBoxScore(gameRes);
+      setIsSimulatingLive(false);
+
+      if (isOver) {
+        if (newMyWins === 4) {
+          toast.success(`🎉 Won the ${currentSeries.roundName} (4-${newOppWins})!`);
+        } else {
+          toast.error(`❌ Eliminated in ${currentSeries.roundName} (4-${newMyWins}). Better luck next time!`);
+        }
       }
-    }
+    }, 2800);
   };
 
   const handleSimulateFullSeries = () => {
-    if (!currentSeries || currentSeries.isOver) return;
+    if (!currentSeries || currentSeries.isOver || isSimulatingLive) return;
 
     const seriesRes = simulateFullSeries(myTeam, currentSeries.oppTeam, currentSeries.roundName);
 
@@ -243,7 +284,11 @@ export default function HoopickPage() {
     });
 
     if (seriesRes.games.length > 0) {
-      setSelectedGameForBoxScore(seriesRes.games[seriesRes.games.length - 1]);
+      const lastGame = seriesRes.games[seriesRes.games.length - 1];
+      setSelectedGameForBoxScore(lastGame);
+      setLiveMyScore(lastGame.myScore);
+      setLiveOppScore(lastGame.oppScore);
+      setLiveClock('00:00 (BUZZER)');
     }
 
     if (seriesRes.winner === 'user') {
@@ -272,7 +317,6 @@ export default function HoopickPage() {
       setCurrentRoundIndex(3);
       startSeries(playoffOpponents.nbaFinals, 'NBA Finals');
     } else {
-      // Champion!
       setIsChampion(true);
       toast.success(locale === 'en' ? '🏆 CONGRATULATIONS! YOU ARE THE NBA CHAMPION!' : '🏆 CHÚC MỪNG! BẠN ĐÃ ĐẠT CÚP VÔ ĐỊCH NBA FINALS!');
     }
@@ -294,7 +338,7 @@ export default function HoopickPage() {
     setCurrentSeries(null);
     setIsChampion(false);
     setSelectedGameForBoxScore(null);
-    toast.success(locale === 'en' ? 'Game reset! Draft a new team.' : 'Đã làm mới Game! Hãy bốc đội hình mới.');
+    setIsSimulatingLive(false);
   };
 
   const getRarityBadgeStyle = (rarity: string) => {
@@ -331,6 +375,39 @@ export default function HoopickPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
+      {/* Custom Styles for Pack Shake & Card Pop animations */}
+      <style jsx global>{`
+        @keyframes packShine {
+          0% { background-position: 0% 0%; }
+          100% { background-position: 130% 130%; }
+        }
+        @keyframes packShake {
+          0%, 100% { transform: translateX(0) rotate(0deg); }
+          20% { transform: translateX(-6px) rotate(-2deg); }
+          40% { transform: translateX(6px) rotate(2deg); }
+          60% { transform: translateX(-4px) rotate(-1deg); }
+          80% { transform: translateX(4px) rotate(1deg); }
+        }
+        @keyframes cardPopIn {
+          0% { transform: scale(0.7) translateY(20px); opacity: 0; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .animate-pack-shine::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(115deg, transparent 30%, rgba(245, 158, 11, 0.25) 48%, rgba(251, 191, 36, 0.4) 50%, rgba(245, 158, 11, 0.25) 52%, transparent 70%);
+          background-size: 260% 260%;
+          animation: packShine 3.2s linear infinite;
+        }
+        .animate-pack-shake {
+          animation: packShake 0.5s ease;
+        }
+        .animate-card-pop {
+          animation: cardPopIn 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+        }
+      `}</style>
+
       {/* Header Bar */}
       <div className="text-center max-w-3xl mx-auto space-y-3">
         <div className="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 px-4 py-1.5 rounded-full text-xs font-black text-amber-400 uppercase tracking-widest">
@@ -454,39 +531,69 @@ export default function HoopickPage() {
       {/* STEP 2: PACK OPENING & SELECTION ZONE */}
       {gameStarted && !playoffMode && (
         <div className="space-y-8">
-          {/* Action Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-card p-6 rounded-3xl border border-slate-800">
-            <div>
-              <h2 className="text-base font-black text-white">
-                {locale === 'en' ? `Pack ${packCount}/${MAX_PACKS}` : `Gói Bài ${packCount}/${MAX_PACKS}`}
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {locale === 'en'
-                  ? 'Open a pack to reveal 5 historical roster cards. Pick 1 player for your starting 5!'
-                  : 'Mở gói bài để xem 5 cầu thủ xuất phát lịch sử. Chọn 1 cầu thủ cho đội hình 5 người!'}
-              </p>
+          {/* REALISTIC 3D SHINING PACK CONTAINER */}
+          <div className="flex flex-col items-center justify-center space-y-6 glass-card p-8 rounded-3xl border border-slate-800 text-center">
+            {/* Physical Metallic Pack Card */}
+            <div
+              onClick={handleOpenPack}
+              className={`w-44 h-60 rounded-2xl cursor-pointer bg-gradient-to-b from-white via-slate-100 to-slate-200 border-2 border-slate-300 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition duration-300 hover:-translate-y-1.5 animate-pack-shine ${
+                isShakingPack ? 'animate-pack-shake' : ''
+              }`}
+            >
+              {currentPack ? (
+                <div className="space-y-2 z-10 px-2 animate-card-pop">
+                  <div
+                    className="w-16 h-16 rounded-full mx-auto flex items-center justify-center shadow-lg border border-black/10"
+                    style={{
+                      backgroundColor: TEAM_META[currentPack[0].t]?.color || '#1D428A',
+                    }}
+                  >
+                    <span
+                      className="font-black text-xl font-mono"
+                      style={{ color: TEAM_META[currentPack[0].t]?.text || '#FFFFFF' }}
+                    >
+                      {TEAM_META[currentPack[0].t]?.abbr || 'NBA'}
+                    </span>
+                  </div>
+                  <div className="font-black text-slate-900 text-base leading-tight uppercase truncate max-w-[150px]">
+                    {currentPack[0].t}
+                  </div>
+                  <div className="font-mono text-xs font-black text-amber-600">
+                    '{currentPack[0].e} SEASON
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2 z-10 text-slate-900">
+                  <div className="text-4xl">📦</div>
+                  <div className="font-black font-mono text-lg tracking-wider">OPEN PACK</div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    ONE ROSTER PER DRAW
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center space-x-3 w-full sm:w-auto">
+            {/* Pack Controls */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={handleOpenPack}
                 disabled={isOpeningPack || packCount >= MAX_PACKS || (currentPack !== null && pickedCardId === null)}
-                className="flex-1 sm:flex-initial px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-40 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition duration-300 whitespace-nowrap"
+                className="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-40 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition"
               >
                 {isOpeningPack
-                  ? (locale === 'en' ? 'OPENING...' : 'ĐANG MỞ...')
+                  ? (locale === 'en' ? 'OPENING PACK...' : 'ĐANG MỞ GÓI...')
                   : currentPack === null
-                  ? (locale === 'en' ? '📦 OPEN PACK' : '📦 MỞ GÓI BÀI')
-                  : (locale === 'en' ? '📦 NEXT PACK' : '📦 MỞ GÓI TIẾP')}
+                  ? (locale === 'en' ? '📦 OPEN PACK 1' : '📦 MỞ GÓI 1')
+                  : (locale === 'en' ? '📦 OPEN NEXT PACK' : '📦 MỞ GÓI TIẾP')}
               </button>
 
               {currentPack !== null && pickedCardId === null && skipsLeft > 0 && (
                 <button
                   onClick={handleSkipPack}
                   disabled={isOpeningPack}
-                  className="px-4 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-orange-400 font-extrabold rounded-2xl text-xs whitespace-nowrap transition"
+                  className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-orange-400 font-extrabold rounded-2xl text-xs whitespace-nowrap transition"
                 >
-                  🔄 {locale === 'en' ? `Skip (${skipsLeft} left)` : `Đổi Gói (${skipsLeft} lượt)`}
+                  🔄 {locale === 'en' ? `Reroll Pack (${skipsLeft} left)` : `Đổi Gói Bài (${skipsLeft} lượt)`}
                 </button>
               )}
             </div>
@@ -497,7 +604,7 @@ export default function HoopickPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs font-mono px-2">
                 <span className="text-slate-400">
-                  {locale === 'en' ? 'Franchise Roster:' : 'Đội Hình:'} <strong className="text-amber-400 font-sans text-sm">{currentPack[0].t} ({currentPack[0].e})</strong>
+                  {locale === 'en' ? 'Drawn Roster:' : 'Đội Hình Rút Được:'} <strong className="text-amber-400 font-sans text-sm">{currentPack[0].t} ({currentPack[0].e})</strong>
                 </span>
                 {pickedCardId && (
                   <span className="text-emerald-400 font-bold">
@@ -516,36 +623,31 @@ export default function HoopickPage() {
                   return (
                     <div
                       key={card.cardId}
-                      className={`p-4 rounded-2xl flex flex-col justify-between space-y-3 relative transition duration-300 ${getCardBorderStyle(
+                      className={`p-4 rounded-2xl flex flex-col justify-between space-y-3 relative transition duration-300 animate-card-pop ${getCardBorderStyle(
                         rarity
                       )} ${isPicked ? 'ring-2 ring-emerald-400 scale-[1.03]' : ''} ${
-                        pickedCardId !== null && !isPicked ? 'opacity-50 grayscale-[30%]' : ''
+                        pickedCardId !== null && !isPicked ? 'opacity-40 grayscale-[30%]' : ''
                       }`}
                     >
                       <div className="space-y-2 text-center">
-                        {/* Rarity Badge */}
                         <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full inline-block tracking-wider ${getRarityBadgeStyle(rarity)}`}>
                           {RARITY_LABELS[rarity]}
                         </span>
 
-                        {/* OVR Rating */}
                         <div className="text-3xl font-black font-mono text-white leading-none">
                           {card.o}
                         </div>
 
-                        {/* Position Badge */}
                         <div className="text-[10px] font-bold text-slate-400 uppercase font-mono">
                           {card.p} {eligPosList.length > 1 && `(${eligPosList.join('/')})`}
                         </div>
 
-                        {/* Name & Franchise */}
                         <div>
                           <div className="text-xs font-black text-white leading-tight">{card.n}</div>
                           <div className="text-[10px] font-bold text-slate-400 mt-0.5">{card.t} '{card.e.slice(2)}</div>
                         </div>
                       </div>
 
-                      {/* Pick Buttons per Eligible Position */}
                       <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
                         {isPicked ? (
                           <div className="py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase rounded-xl text-center">
@@ -612,7 +714,6 @@ export default function HoopickPage() {
 
             {/* Tactical Court View */}
             <div className="relative max-w-md mx-auto aspect-[4/5] bg-gradient-to-b from-amber-950/80 via-slate-950 to-slate-950 border-2 border-amber-700/60 rounded-3xl p-4 shadow-2xl overflow-hidden">
-              {/* Court SVG Lines */}
               <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" viewBox="0 0 400 500">
                 <rect x="10" y="10" width="380" height="480" fill="none" stroke="#FFFFFF" strokeWidth="2" />
                 <path d="M40,20 L40,140 A200,200 0 0 0 360,140 L360,20" fill="none" stroke="#FFFFFF" strokeWidth="2" />
@@ -621,20 +722,10 @@ export default function HoopickPage() {
                 <circle cx="200" cy="35" r="10" fill="none" stroke="#fbbf24" strokeWidth="3" />
               </svg>
 
-              {/* Slot Positions on Court */}
-              {/* PG (Bottom Center) */}
               <CourtSlotCard position="PG" player={myTeam.PG} style={{ left: '50%', top: '88%' }} />
-
-              {/* SG (Bottom Right) */}
               <CourtSlotCard position="SG" player={myTeam.SG} style={{ left: '82%', top: '65%' }} />
-
-              {/* SF (Bottom Left) */}
               <CourtSlotCard position="SF" player={myTeam.SF} style={{ left: '18%', top: '65%' }} />
-
-              {/* PF (Top Left) */}
               <CourtSlotCard position="PF" player={myTeam.PF} style={{ left: '28%', top: '30%' }} />
-
-              {/* C (Top Right) */}
               <CourtSlotCard position="C" player={myTeam.C} style={{ left: '72%', top: '30%' }} />
             </div>
           </div>
@@ -655,7 +746,6 @@ export default function HoopickPage() {
               </span>
             </div>
 
-            {/* 4 Bracket Steps */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-center">
               {roundNames.map((rName, idx) => {
                 const isCurrent = idx === currentRoundIndex;
@@ -701,7 +791,7 @@ export default function HoopickPage() {
             </div>
           )}
 
-          {/* Live Scoreboard Card */}
+          {/* LIVE DIGITAL SCOREBOARD WITH COUNTDOWN CLOCK & REALTIME TICKING */}
           {!isChampion && (
             <div className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl text-center">
               <div className="space-y-1">
@@ -713,21 +803,36 @@ export default function HoopickPage() {
                 </h3>
               </div>
 
-              {/* Score Display */}
-              <div className="grid grid-cols-3 items-center gap-4 max-w-lg mx-auto py-4">
+              {/* Digital LED Clock & Live Quarter Status */}
+              <div className="inline-flex flex-col items-center space-y-1 bg-slate-950 border border-slate-800 px-6 py-3 rounded-2xl shadow-inner">
+                <span className="text-[10px] font-mono font-extrabold text-slate-400 uppercase tracking-widest">
+                  {isSimulatingLive ? `LIVE MATCH IN PROGRESS — ${liveQuarterLabel}` : 'LIVE GAME CLOCK'}
+                </span>
+                <div
+                  className="text-3xl font-mono font-black text-red-500 tracking-wider"
+                  style={{ textShadow: '0 0 12px rgba(239, 68, 68, 0.6)' }}
+                >
+                  {liveClock}
+                </div>
+              </div>
+
+              {/* Live Score Display */}
+              <div className="grid grid-cols-3 items-center gap-4 max-w-lg mx-auto py-2">
                 {/* User Team */}
                 <div className="space-y-1 text-center">
                   <span className="text-xs font-bold text-slate-400 truncate block">{teamName}</span>
-                  <div className="text-4xl font-black font-mono text-amber-400">{currentSeries.myWins}</div>
+                  <div className={`text-4xl sm:text-5xl font-black font-mono text-amber-400 transition-transform ${isSimulatingLive ? 'scale-110' : ''}`}>
+                    {liveMyScore}
+                  </div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase">{teamOvr} OVR</span>
                 </div>
 
-                {/* VS Badge */}
+                {/* VS & Series Wins Badge */}
                 <div className="flex flex-col items-center space-y-1">
                   <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-black text-slate-400">
                     VS
                   </span>
-                  <span className="text-[11px] font-mono text-slate-400 font-bold">
+                  <span className="text-[11px] font-mono text-amber-400 font-bold">
                     Series: {currentSeries.myWins} - {currentSeries.oppWins}
                   </span>
                 </div>
@@ -735,9 +840,11 @@ export default function HoopickPage() {
                 {/* Opponent Team */}
                 <div className="space-y-1 text-center">
                   <span className="text-xs font-bold text-slate-400 truncate block">{currentSeries.oppTeam.franchise}</span>
-                  <div className="text-4xl font-black font-mono text-orange-500">{currentSeries.oppWins}</div>
+                  <div className={`text-4xl sm:text-5xl font-black font-mono text-orange-500 transition-transform ${isSimulatingLive ? 'scale-110' : ''}`}>
+                    {liveOppScore}
+                  </div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase">
-                    {Object.values(currentSeries.oppTeam.roster).reduce((sum, r) => sum + r.o, 0) / 5} OVR
+                    {Math.round(Object.values(currentSeries.oppTeam.roster).reduce((sum, r) => sum + r.o, 0) / 5)} OVR
                   </span>
                 </div>
               </div>
@@ -748,14 +855,16 @@ export default function HoopickPage() {
                   <>
                     <button
                       onClick={handleSimulateNextGame}
-                      className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition"
+                      disabled={isSimulatingLive}
+                      className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-40 hover:brightness-110 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition"
                     >
-                      ⚡ {locale === 'en' ? `SIMULATE GAME ${currentSeries.games.length + 1}` : `MÔ PHỎNG TRẬN ${currentSeries.games.length + 1}`}
+                      ⚡ {isSimulatingLive ? (locale === 'en' ? 'GAME IN PROGRESS...' : 'ĐANG ĐẤU REAL-TIME...') : locale === 'en' ? `SIMULATE GAME ${currentSeries.games.length + 1}` : `MÔ PHỎNG TRẬN ${currentSeries.games.length + 1}`}
                     </button>
 
                     <button
                       onClick={handleSimulateFullSeries}
-                      className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-extrabold rounded-2xl text-xs uppercase tracking-wider transition"
+                      disabled={isSimulatingLive}
+                      className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-slate-200 font-extrabold rounded-2xl text-xs uppercase tracking-wider transition"
                     >
                       ⏩ {locale === 'en' ? 'SIMULATE ENTIRE SERIES' : 'MÔ PHỎNG TOÀN BỘ SERIES'}
                     </button>
@@ -789,7 +898,6 @@ export default function HoopickPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* My Team Box Score */}
                 <div className="space-y-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
                   <h4 className="text-xs font-bold text-amber-400 font-mono uppercase">{teamName}</h4>
                   <table className="w-full text-xs font-mono text-left">
@@ -816,7 +924,6 @@ export default function HoopickPage() {
                   </table>
                 </div>
 
-                {/* Opponent Team Box Score */}
                 <div className="space-y-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
                   <h4 className="text-xs font-bold text-orange-400 font-mono uppercase">{currentSeries.oppTeam.franchise} ({currentSeries.oppTeam.year})</h4>
                   <table className="w-full text-xs font-mono text-left">
