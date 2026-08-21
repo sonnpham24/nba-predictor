@@ -74,6 +74,9 @@ export default function Navbar() {
           <Link href={user ? '/regular-season' : '/'} className="flex items-center space-x-3 group">
             <img
               src="/buzzerbet-icon.svg"
+              onError={(e) => {
+                e.currentTarget.src = '/icon.png';
+              }}
               alt="BuzzerBet"
               className="w-11 h-11 rounded-2xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition duration-300"
             />

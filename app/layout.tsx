@@ -18,13 +18,12 @@ export const metadata: Metadata = {
   description: "Dự đoán kết quả NBA Regular Season, Playoffs và Yes/No prop bets cùng cộng đồng BuzzerBet.",
   icons: {
     icon: [
-      { url: "/buzzerbet-icon.svg", type: "image/svg+xml" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
       { url: "/favicon.ico", sizes: "any" },
     ],
-    shortcut: "/buzzerbet-icon.svg",
-    apple: "/apple-touch-icon.png",
+    shortcut: "/icon.svg",
+    apple: "/apple-icon.png",
   },
 };
 
@@ -36,9 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakartaSans.variable}>
       <head>
-        <link rel="icon" href="/buzzerbet-icon.svg" type="image/svg+xml" />
-        <link rel="shortcut icon" href="/buzzerbet-icon.svg" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
       </head>
       <body className="antialiased bg-[#07090e] bg-stadium-mesh text-slate-100 min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-950 font-sans transition-colors duration-300">
         <ThemeProvider>

@@ -1,4 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">BuzzerBet icon</title>
+  <desc id="desc">A basketball with a lightning checkmark for BuzzerBet.</desc>
   <defs>
     <linearGradient id="ball" x1="20" y1="14" x2="104" y2="114" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#fbbf24"/>

@@ -21,12 +21,17 @@ export default function KofiModal({
 
   if (!isOpen) return null;
 
-  // Direct embedded widget URL for Ko-fi tipping without landing page redirects
-  const embeddedKofiUrl = `https://ko-fi.com/${kofiUsername}/?hidefeed=true&widget=true&embed=true`;
+  const handleOpenKofiDirect = (amount?: number) => {
+    let targetUrl = kofiUrl;
+    if (amount) {
+      targetUrl = `${kofiUrl}?amount=${amount}`;
+    }
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="glass-card max-w-xl w-full p-6 md:p-8 rounded-3xl border border-sky-500/40 shadow-2xl relative overflow-hidden space-y-6 animate-scale-in">
+    <div className="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="glass-card max-w-lg w-full p-6 md:p-8 rounded-3xl border border-sky-500/40 shadow-2xl relative overflow-hidden space-y-6 animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center space-x-3">
@@ -77,30 +82,51 @@ export default function KofiModal({
           </button>
         </div>
 
-        {/* Tab 1: Embedded Ko-fi Widget */}
+        {/* Tab 1: Interactive Ko-fi Tipping Card */}
         {activeTab === 'kofi' && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-800 overflow-hidden bg-white min-h-[440px] shadow-inner relative">
-              <iframe
-                src={embeddedKofiUrl}
-                title="Support on Ko-fi"
-                className="w-full h-[440px] border-none"
-              />
+          <div className="p-6 bg-slate-950/90 rounded-2xl border border-sky-500/30 space-y-6 text-center shadow-inner">
+            <div className="space-y-2">
+              <span className="text-3xl">☕</span>
+              <h4 className="text-base font-black text-white">
+                {locale === 'en' ? 'Buy Me a Coffee on Ko-fi' : 'Ủng hộ cà phê qua Ko-fi'}
+              </h4>
+              <p className="text-xs text-slate-400 leading-normal max-w-sm mx-auto">
+                {locale === 'en'
+                  ? 'No Ko-fi account required! Donate as a guest using Credit/Debit Card or PayPal.'
+                  : 'Không cần tài khoản Ko-fi! Bạn có thể ủng hộ dưới danh nghĩa Khách (Guest) bằng Thẻ Visa/Mastercard hoặc PayPal.'}
+              </p>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-              <span>
-                {locale === 'en' ? '🔒 Secure Checkout via Ko-fi' : '🔒 Thanh toán an toàn qua Ko-fi'}
+            {/* Quick Amount Selectors */}
+            <div>
+              <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                {locale === 'en' ? 'Select Donation Preset:' : 'Chọn mức ủng hộ:'}
               </span>
-              <a
-                href={kofiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sky-400 hover:underline font-bold flex items-center space-x-1"
-              >
-                <span>{locale === 'en' ? 'Open in new tab ↗' : 'Mở tab mới ↗'}</span>
-              </a>
+              <div className="grid grid-cols-4 gap-2">
+                {[3, 5, 10, 25].map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => handleOpenKofiDirect(amt)}
+                    className="py-2.5 rounded-xl bg-slate-900 hover:bg-sky-500/20 border border-slate-700 hover:border-sky-500 text-slate-200 hover:text-sky-300 font-black text-xs transition"
+                  >
+                    ${amt} ☕
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Main Action Button */}
+            <button
+              onClick={() => handleOpenKofiDirect()}
+              className="w-full py-4 bg-gradient-to-r from-sky-500 via-blue-600 to-sky-500 hover:brightness-110 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-xl hover:scale-[1.02] transition duration-300 flex items-center justify-center space-x-2"
+            >
+              <span>☕</span>
+              <span>{locale === 'en' ? 'GO TO KO-FI DONATION PAGE (CARD / PAYPAL) →' : 'ĐẾN TRANG DONATE KO-FI (THẺ / PAYPAL) →'}</span>
+            </button>
+
+            <p className="text-[11px] text-slate-500 italic">
+              🔒 {locale === 'en' ? 'Direct checkout securely processed on Ko-fi.com' : 'Thanh toán trực tiếp an toàn trên Ko-fi.com (Không qua đăng nhập)'}
+            </p>
           </div>
         )}
 
