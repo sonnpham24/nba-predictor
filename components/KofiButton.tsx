@@ -6,12 +6,14 @@ import KofiModal from '@/components/KofiModal';
 
 interface KofiButtonProps {
   variant?: 'navbar' | 'footer' | 'banner' | 'floating';
+  kofiUsername?: string;
   kofiUrl?: string;
 }
 
 export default function KofiButton({
   variant = 'navbar',
-  kofiUrl = process.env.NEXT_PUBLIC_KOFI_URL || 'https://ko-fi.com/vnbrayvn',
+  kofiUsername = process.env.NEXT_PUBLIC_KOFI_USERNAME || 'buzzerbet',
+  kofiUrl = process.env.NEXT_PUBLIC_KOFI_URL || 'https://ko-fi.com/buzzerbet',
 }: KofiButtonProps) {
   const { locale } = useLanguage();
   const [modalOpen, setModalOpen] = useState(false);
@@ -90,6 +92,7 @@ export default function KofiButton({
       <KofiModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        kofiUsername={kofiUsername}
         kofiUrl={kofiUrl}
       />
     </>
