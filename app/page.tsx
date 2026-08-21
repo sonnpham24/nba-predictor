@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import KofiButton from '@/components/KofiButton';
 
 export default function LandingPage() {
-  const { t, locale } = useLanguage();
+  const { t } = useLanguage();
   const [user, setUser] = useState<{ username: string } | null>(null);
 
   // Interactive Live Prediction Teaser States
@@ -31,21 +31,19 @@ export default function LandingPage() {
       {/* Hero Section */}
       <div className="text-center max-w-4xl mx-auto space-y-8">
         <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-500/40 px-5 py-2 rounded-full text-xs font-black text-amber-300 uppercase tracking-widest shadow-lg animate-pulse">
-          <span>🏀 NBA 2026-27 — SẢNH DỰ ĐOÁN TỶ SỐ & ĐUA TOP BẢNG XẾP HẠNG</span>
+          <span>{t.landingBadge}</span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-none uppercase">
-          <span className="gradient-text-gold">DỰ ĐOÁN TỶ SỐ NBA</span>
+          <span className="gradient-text-gold">{t.landingMainHeading}</span>
           <br />
           <span className="text-white text-3xl sm:text-5xl font-extrabold mt-2 block">
-            CHINH PHỤC BẢNG XẾP HẠNG TOÀN CẦU
+            {t.landingSubHeading}
           </span>
         </h1>
 
         <p className="text-slate-300 text-base sm:text-xl max-w-2xl mx-auto font-medium leading-normal">
-          {locale === 'en'
-            ? 'Predict daily NBA matchups, vote on Yes/No prop bets, earn leaderboard points, and prove your basketball knowledge!'
-            : 'Dự đoán kết quả trận đấu NBA hàng ngày, tham gia kèo phụ Yes/No chỉ số siêu sao, tích lũy điểm thưởng và vinh danh TOP Predictor!'}
+          {t.landingDescription}
         </p>
 
         {/* CTA Buttons */}
@@ -56,13 +54,13 @@ export default function LandingPage() {
                 href="/regular-season"
                 className="w-full sm:w-auto px-9 py-4.5 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 hover:brightness-110 text-slate-950 font-black rounded-2xl text-sm uppercase tracking-wider shadow-2xl shadow-amber-500/30 hover:scale-105 transition duration-300"
               >
-                🏀 {locale === 'en' ? 'Go to Matchup Predictor →' : 'Vào Sảnh Dự Đoán Trận Đấu →'}
+                {t.landingBtnGoPredict}
               </Link>
               <Link
                 href="/stats"
                 className="w-full sm:w-auto px-8 py-4.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-2xl text-sm border border-slate-700 shadow-lg hover:scale-105 transition duration-300"
               >
-                📊 {locale === 'en' ? 'View Leaderboard' : 'Xem Bảng Xếp Hạng'}
+                {t.landingBtnViewLeaderboard}
               </Link>
             </>
           ) : (
@@ -71,13 +69,13 @@ export default function LandingPage() {
                 href="/auth"
                 className="w-full sm:w-auto px-9 py-4.5 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 hover:brightness-110 text-slate-950 font-black rounded-2xl text-sm uppercase tracking-wider shadow-2xl shadow-amber-500/30 hover:scale-105 transition duration-300"
               >
-                🔥 {locale === 'en' ? 'START PREDICTING FOR FREE (10 SECONDS) →' : 'TẠO TÀI KHOẢN DỰ ĐOÁN MIỄN PHÍ (10 GIÂY) →'}
+                {t.landingBtnCreateFree}
               </Link>
               <Link
                 href="/auth"
                 className="w-full sm:w-auto px-8 py-4.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-2xl text-sm border border-slate-700 shadow-lg hover:scale-105 transition duration-300"
               >
-                🔑 {locale === 'en' ? 'Sign In to Account' : 'Đăng Nhập Tài Khoản'}
+                {t.landingBtnSignIn}
               </Link>
             </>
           )}
@@ -88,15 +86,13 @@ export default function LandingPage() {
       <div className="glass-card p-6 sm:p-10 rounded-3xl border border-amber-500/30 bg-gradient-to-b from-amber-950/30 via-slate-950 to-slate-950 shadow-2xl text-center space-y-6">
         <div className="space-y-2">
           <span className="text-xs font-mono font-black text-amber-400 uppercase tracking-widest">
-            ⚡ LIVE PREDICTION DEMO — THỬ CHỌN KÈO TRỰC TIẾP NGAY TRÊN TRANG CHỦ!
+            {t.landingDemoBadge}
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-white">
-            {locale === 'en' ? 'L.A. Lakers vs Golden State Warriors' : 'L.A. Lakers đấu với Golden State Warriors'}
+            {t.landingDemoTitle}
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
-            {locale === 'en'
-              ? 'Predict who wins tonight\'s marquee matchup and see community voting trends!'
-              : 'Thử chọn đội bóng bạn tin tưởng sẽ giành chiến thắng trong trận đấu đỉnh cao hôm nay!'}
+            {t.landingDemoSub}
           </p>
         </div>
 
@@ -123,7 +119,7 @@ export default function LandingPage() {
               <div className="font-black text-white text-base">L.A. Lakers</div>
               <div className="text-xs font-mono text-amber-400 font-bold mt-1">62% Picked</div>
               <div className="mt-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase rounded-xl transition">
-                {demoPickedTeam === 'LAKERS' ? '✅ DA CHỌN LAKERS' : 'CHỌN LAKERS THẮNG'}
+                {demoPickedTeam === 'LAKERS' ? t.landingDemoPickedLakers : t.landingDemoPickLakers}
               </div>
             </button>
 
@@ -142,7 +138,7 @@ export default function LandingPage() {
               <div className="font-black text-white text-base">GS Warriors</div>
               <div className="text-xs font-mono text-blue-400 font-bold mt-1">38% Picked</div>
               <div className="mt-3 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-xl transition">
-                {demoPickedTeam === 'WARRIORS' ? '✅ DA CHỌN WARRIORS' : 'CHỌN WARRIORS THẮNG'}
+                {demoPickedTeam === 'WARRIORS' ? t.landingDemoPickedWarriors : t.landingDemoPickWarriors}
               </div>
             </button>
           </div>
@@ -164,16 +160,16 @@ export default function LandingPage() {
         {demoPickedTeam && (
           <div className="mt-4 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/40 max-w-md mx-auto space-y-3 animate-fade-in">
             <div className="text-xs font-black text-amber-300 uppercase">
-              🎉 BẠN ĐÃ CHỌN {demoPickedTeam === 'LAKERS' ? 'L.A. LAKERS' : 'GS WARRIORS'} THẮNG TRẬN HÔM NAY!
+              {t.landingDemoPromptTitle} {demoPickedTeam === 'LAKERS' ? 'L.A. LAKERS' : 'GS WARRIORS'} {t.landingDemoPromptSub}
             </div>
             <p className="text-xs text-slate-300">
-              Đăng ký tài khoản miễn phí chỉ trong 10 giây để chốt dự đoán này, tích lũy +1 điểm thưởng khi trận đấu kết thúc và đua top Bảng Xếp Hạng!
+              {t.landingDemoPromptDesc}
             </p>
             <Link
               href="/auth"
               className="inline-block px-8 py-3.5 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-lg hover:scale-105 transition"
             >
-              🚀 TẠO TÀI KHOẢN & CHỐT DỰ ĐOÁN NGAY →
+              {t.landingDemoRegisterBtn}
             </Link>
           </div>
         )}
@@ -186,7 +182,7 @@ export default function LandingPage() {
             CORE PLATFORM FEATURES
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-white">
-            {locale === 'en' ? 'Why Predict on BuzzerBet Hub?' : 'Lý Do Tham Gia Dự Đoán Tại BuzzerBet'}
+            {t.landingWhyTitle}
           </h2>
         </div>
 
@@ -202,14 +198,14 @@ export default function LandingPage() {
               </div>
               <div>
                 <span className="text-[10px] font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                  TÍNH NĂNG CHÍNH
+                  {t.landingFeatMainTag}
                 </span>
                 <h3 className="text-lg font-black text-white mt-2 mb-2">{t.landingFeat1Title}</h3>
                 <p className="text-slate-400 text-xs leading-relaxed">{t.landingFeat1Desc}</p>
               </div>
             </div>
             <div className="pt-4 text-xs font-black text-amber-400 group-hover:translate-x-1 transition">
-              {user ? 'Vào Dự Đoán Ngay →' : 'Khóa Quyền (Đăng Nhập) →'}
+              {user ? t.landingFeatActionPredict : t.landingFeatActionLocked}
             </div>
           </Link>
 
@@ -224,14 +220,14 @@ export default function LandingPage() {
               </div>
               <div>
                 <span className="text-[10px] font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/30">
-                  KÈO PHỤ HẤP DẪN
+                  {t.landingFeatPropTag}
                 </span>
                 <h3 className="text-lg font-black text-white mt-2 mb-2">{t.landingFeat2Title}</h3>
                 <p className="text-slate-400 text-xs leading-relaxed">{t.landingFeat2Desc}</p>
               </div>
             </div>
             <div className="pt-4 text-xs font-black text-blue-400 group-hover:translate-x-1 transition">
-              {user ? 'Tham Gia Kèo →' : 'Khóa Quyền (Đăng Nhập) →'}
+              {user ? t.landingFeatActionProp : t.landingFeatActionLocked}
             </div>
           </Link>
 
@@ -246,14 +242,14 @@ export default function LandingPage() {
               </div>
               <div>
                 <span className="text-[10px] font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                  VINH DANH TOP RANK
+                  {t.landingFeatLeaderboardTag}
                 </span>
                 <h3 className="text-lg font-black text-white mt-2 mb-2">{t.landingFeat3Title}</h3>
                 <p className="text-slate-400 text-xs leading-relaxed">{t.landingFeat3Desc}</p>
               </div>
             </div>
             <div className="pt-4 text-xs font-black text-emerald-400 group-hover:translate-x-1 transition">
-              {user ? 'Xem Bảng Xếp Hạng →' : 'Khóa Quyền (Đăng Nhập) →'}
+              {user ? t.landingFeatActionLeaderboard : t.landingFeatActionLocked}
             </div>
           </Link>
 
@@ -268,38 +264,36 @@ export default function LandingPage() {
               </div>
               <div>
                 <span className="text-[10px] font-black text-purple-400 uppercase bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/30">
-                  MINIGAME PHỤ
+                  {t.landingFeatMinigameTag}
                 </span>
-                <h3 className="text-lg font-black text-white mt-2 mb-2">Hoopick Draft Minigame</h3>
-                <p className="text-slate-400 text-xs leading-relaxed">
-                  Bốc thẻ 66 đội bóng NBA lịch sử, ghép 5 vị trí Starting 5 để thi đấu Playoff giải trí!
-                </p>
+                <h3 className="text-lg font-black text-white mt-2 mb-2">{t.landingFeatMinigameTitle}</h3>
+                <p className="text-slate-400 text-xs leading-relaxed">{t.landingFeatMinigameDesc}</p>
               </div>
             </div>
             <div className="pt-4 text-xs font-black text-purple-400 group-hover:translate-x-1 transition">
-              {user ? 'Chơi Ngay →' : 'Khóa Quyền (Đăng Nhập) →'}
+              {user ? t.landingFeatActionMinigame : t.landingFeatActionLocked}
             </div>
           </Link>
         </div>
       </div>
 
-      {/* Community Stats Counter Banner */}
+      {/* Live Stats Counter Banner */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center font-mono">
         <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-1">
           <div className="text-3xl font-black text-amber-400">500+</div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase">Trận NBA Vòng Bảng</div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase">{t.landingStatMatches}</div>
         </div>
         <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-1">
           <div className="text-3xl font-black text-orange-400">24/7</div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase">Đồng Bộ ESPN Real-time</div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase">{t.landingStatSync}</div>
         </div>
         <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-1">
-          <div className="text-3xl font-black text-emerald-400">+1 ĐIỂM</div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase">Thưởng Mỗi Trận Đúng</div>
+          <div className="text-3xl font-black text-emerald-400">+1</div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase">{t.landingStatReward}</div>
         </div>
         <div className="glass-card p-6 rounded-2xl border border-slate-800 space-y-1">
           <div className="text-3xl font-black text-purple-400">100%</div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase">Miễn Phí Tham Gia</div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase">{t.landingStatFree}</div>
         </div>
       </div>
 

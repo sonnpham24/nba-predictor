@@ -20,7 +20,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 font-medium leading-normal max-w-sm">
-              BuzzerBet is a community NBA 2026-27 prediction, historical draft minigame, and score synchronization hub.
+              {t.footerDescription}
             </p>
           </div>
 
@@ -51,7 +51,7 @@ export default function Footer() {
           {/* Developer Credit Column */}
           <div className="flex flex-col items-center md:items-end space-y-1.5">
             <div className="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-black text-amber-400">
-              <span>👨‍💻 Created & Designed by Son Pham</span>
+              <span>{t.footerCreatedBy}</span>
             </div>
             <a
               href="mailto:phamcongson297@gmail.com"
